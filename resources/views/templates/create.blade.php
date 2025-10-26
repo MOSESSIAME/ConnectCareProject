@@ -34,14 +34,14 @@
                     <label class="form-label fw-semibold" for="title">Template Title</label>
                     <input
                         type="text"
-                        id="title"
-                        name="title"
+                        id="name"
+                        name="name"
                         class="form-control @error('title') is-invalid @enderror"
                         placeholder="e.g. Sunday Service Reminder"
                         value="{{ old('title') }}"
                         required
                     >
-                    @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 {{-- Channel --}}

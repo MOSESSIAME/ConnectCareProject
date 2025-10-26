@@ -1,7 +1,18 @@
 @extends('layouts.guest')
 
+@push('styles')
+<style>
+/* Hide the floating footer on the right side */
+/* body > div[style*="position: fixed"], */
+/* body > div.text-muted, */
+body > p.text-muted {
+    display: none !important;
+}
+</style>
+@endpush
+
 @section('content')
-<div class="d-flex align-items-center justify-content-center min-vh-100 bg-gradient"
+<div class="d-flex align-items-center justify-content-center min-vh-100 w-100 bg-gradient"
      style="background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);">
     
     <div class="card shadow-lg border-0 rounded-4" style="width: 420px; background: #fff;">
@@ -9,7 +20,7 @@
 
             <!-- App Header -->
             <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary mb-1">ConnectCare CMS</h3>
+                <h3 class="fw-bold text-primary mb-1">ConnectCare</h3>
                 <p class="text-muted small">Church Management System</p>
             </div>
 
@@ -32,7 +43,7 @@
 
             <!-- ✅ Login Form -->
             <form method="POST" action="{{ route('login') }}">
-                @csrf {{-- CSRF protection is essential for Laravel --}}
+                @csrf
                 
                 <div class="mb-3">
                     <label for="email" class="form-label fw-semibold">Email Address</label>
@@ -54,6 +65,12 @@
                         <input class="form-check-input" type="checkbox" name="remember" id="remember">
                         <label class="form-check-label small" for="remember">Remember me</label>
                     </div>
+
+                    {{-- @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="small text-decoration-none text-primary fw-semibold">
+                            Forgot Password?
+                        </a>
+                    @endif --}}
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">

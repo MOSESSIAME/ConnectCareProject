@@ -14,9 +14,9 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
-                    <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
+                    <input type="text" name="name" class="form-control @error('title') is-invalid @enderror"
                            value="{{ old('title', $template->title) }}" required>
-                    @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="row">

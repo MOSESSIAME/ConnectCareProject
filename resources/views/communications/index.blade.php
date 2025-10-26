@@ -1,50 +1,63 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h2 class="fw-bold mb-4">Communications</h2>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-primary mb-0">
+            <i class="bi bi-inbox me-2"></i> Communications
+        </h3>
+        <a href="{{ route('communications.create') }}" class="btn btn-primary">
+            <i class="bi bi-send me-1"></i> Compose
+        </a>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <div class="mb-3">
-        <a href="{{ route('communications.create') }}" class="btn btn-primary">+ New Message</a>
-    </div>
-
-    <div class="card shadow-sm">
+    <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Sent</th>
-                            <th>Title</th>
-                            <th>Channel</th>
-                            <th>Audience</th>
-                            <th>Status</th>
-                            <th>Created By</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($records as $c)
+            @if($records->count())
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0 align-middle">
+                        <thead class="table-dark">
                             <tr>
-                                <td>{{ $c->sent_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td><a href="{{ route('communications.show', $c) }}">{{ $c->title }}</a></td>
-                                <td class="text-uppercase">{{ $c->channel }}</td>
-                                <td>{{ Str::headline($c->audience) }}</td>
-                                <td><span class="badge text-bg-{{ $c->status === 'sent' ? 'success' : ($c->status === 'failed' ? 'danger':'secondary') }}">{{ $c->status }}</span></td>
-                                <td>{{ $c->creator?->name ?? '—' }}</td>
+                                <th>#</th>
+                                <th>Title</th>
+                                <th>Channel</th>
+                                <th>Audience</th>
+                                <th>Status</th>
+                                <th>Scheduled</th>
+                                <th>Created By</th>
+                                <th>Created</th>
                             </tr>
-                        @empty
-                            <tr><td colspan="6" class="text-center text-muted p-4">No messages yet.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer">
-            {{ $records->links() }}
+                        </thead>
+                        <tbody>
+                            @foreach($records as $i => $c)
+                                <tr>
+                                    <td>{{ $records->firstItem() + $i }}</td>
+                                    <td>{{ $c->title }}</td>
+                                    <td class="text-uppercase">{{ $c->channel }}</td>
+                                    <td>{{ str_replace('_',' ', $c->audience) }}</td>
+                                    <td>
+                                        <span class="badge {{ $c->status === 'sent' ? 'bg-success' : 'bg-secondary' }}">
+                                            {{ ucfirst($c->status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ optional($c->scheduled_at)->format('d M Y, H:i') ?? '-' }}</td>
+                                    <td>{{ $c->creator->name ?? '—' }}</td>
+                                    <td>{{ $c->created_at->format('d M Y, H:i') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3">
+                    {{ $records->links() }}
+                </div>
+            @else
+                <div class="p-4 text-center text-muted">No messages yet.</div>
+            @endif
         </div>
     </div>
 </div>

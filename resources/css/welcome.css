@@ -1,3 +1,6 @@
+
+
+
 /* ========= Global Styles ========= */
 body {
     margin: 0;
@@ -57,15 +60,15 @@ h1, h5, p {
 }
 
 /* ========= Footer ========= */
-footer {
+/* footer { */
     position: relative;
     bottom: 20px;
     text-align: center;
     color: #6c757d;
-}
+/* } */
 
 /* ========= Animations ========= */
-@keyframes fadeIn {
+/* @keyframes fadeIn { */
     from {
         opacity: 0;
         transform: translateY(20px);
@@ -75,3 +78,4 @@ footer {
         transform: translateY(0);
     }
 }
+ */
