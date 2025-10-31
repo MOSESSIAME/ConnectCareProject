@@ -15,7 +15,7 @@
         body { background-color: #f8f9fa; }
         .navbar-brand { font-weight: 700; letter-spacing: .3px; }
         .nav-link.active { font-weight: 600; color: #ffc107 !important; }
-        .dropdown-menu a { color: #000 !important; }
+        .dropdown-menu a { color: #000000 !important; }
 
         /* Tighter/more consistent link spacing, nicer alignment */
         .navbar-nav .nav-link { padding: .5rem .75rem; }
@@ -25,7 +25,7 @@
         /* Optional thin divider between groups on lg+ */
         @media (min-width: 992px) {
             .nav-sep {
-                width: 1px; height: 24px; background: rgba(255,255,255,.25);
+                width: 1px; height: 24px; background: hsla(238, 43%, 25%, 0.251);
                 margin: 0 .5rem;
             }
         }
@@ -64,7 +64,7 @@
 
                         <li class="nav-item">
                             <a href="{{ route('admin.users.index') }}"
-                               class="nav-link {{ $is('admin.users.*') ? 'active' : '' }}">User Management</a>
+                               class="nav-link {{ $is('admin.users.*') ? 'active' : '' }}">Users</a>
                         </li>
 
                         <li class="nav-item dropdown">
@@ -102,7 +102,7 @@
 
                         <li class="nav-item">
                             <a href="{{ route('reports.homecells.index') }}"
-                               class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecell Reports</a>
+                               class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecells</a>
                         </li>
 
                         <li class="nav-item dropdown">
@@ -136,7 +136,7 @@
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('reports.homecells.index') }}"
-                               class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecell Reports</a>
+                               class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecells</a>
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('members.index') }}"
@@ -203,10 +203,14 @@
                                class="nav-link {{ $is('zone.dashboard') ? 'active' : '' }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
+                            <a href="{{ route('reports.homecells.index') }}"
+                               class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecells</a>
+                        </li
+                        <li class="nav-item">
                             <a href="{{ route('reports.dashboard') }}"
-                               class="nav-link {{ $is('reports.dashboard') ? 'active' : '' }}">Reports Dashboard</a>
+                               class="nav-link {{ $is('reports.dashboard') ? 'active' : '' }}">   </a>
                         </li>
-
+                       
                     {{-- ================= HOMECELL LEADER ================= --}}
                     @elseif($role === 'Homecell Leader')
                         <li class="nav-item">

@@ -300,9 +300,40 @@ Route::middleware(['auth','role:Admin,Pastor,Staff'])->group(function () {
     Route::resource('templates', TemplateController::class);
 });
 
+
+
+
+
+// Twilio testing 
+
+
+
+
+use App\Services\SmsClient;
+
+Route::get('/test-sms', function () {
+    $sms = new SmsClient();
+
+    try {
+        $to = '+260979964985'; // 🔹 Replace with your verified number
+        $sid = $sms->send($to, 'Hello from ConnectCare via Twilio 🎉');
+        return "✅ SMS sent successfully! Message SID: {$sid}";
+    } catch (Exception $e) {
+        return "❌ SMS failed: " . $e->getMessage();
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | AUTH (Breeze)
 |--------------------------------------------------------------------------
 */
 require __DIR__ . '/auth.php';
+
+
+
+
+
+
+
+

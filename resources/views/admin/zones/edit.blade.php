@@ -46,6 +46,22 @@
             @error('district_id') <small class="text-danger">{{ $message }}</small> @enderror
         </div>
 
+        {{-- New: Zonal Leader --}}
+        <div class="mb-3">
+            <label for="leader_id" class="form-label">Zonal Leader (optional)</label>
+            <select name="leader_id" id="leader_id"
+                    class="form-select @error('leader_id') is-invalid @enderror">
+                <option value="">-- No Leader Yet --</option>
+                @foreach($leaders as $u)
+                    <option value="{{ $u->id }}"
+                        {{ (int) old('leader_id', $item->leader_id) === (int) $u->id ? 'selected' : '' }}>
+                        {{ $u->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('leader_id') <small class="text-danger">{{ $message }}</small> @enderror
+        </div>
+
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{{ route('admin.zones.index') }}" class="btn btn-secondary">Cancel</a>
     </form>

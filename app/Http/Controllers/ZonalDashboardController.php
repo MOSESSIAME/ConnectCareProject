@@ -2,58 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Zone;
-use App\Models\Homecell;
 use App\Models\Member;
 use App\Models\HomecellReport;
 
 class ZonalDashboardController extends Controller
 {
     /**
-     * Display a dashboard view for Zonal Leaders.
+     * Zonal Leader dashboard.
      */
     public function index()
     {
         $user = Auth::user();
 
-        // Ensure user has a zone assigned
-        if (!$user->zone_id) {
+        // 1) Find the zone this user leads
+        //    (requires zones.leader_id to be set to this user's id)
+        $zone = Zone::with('homecells')
+            ->where('leader_id', $user->id)
+            ->first();
+
+        if (!$zone) {
+            // No zone attached to this leader
             return view('dashboards.zone', [
-                'zone' => null,
+                'zone'          => null,
                 'homecellCount' => 0,
-                'memberCount' => 0,
+                'memberCount'   => 0,
                 'recentReports' => collect(),
-                'summary' => [
-                    'first_timers' => 0,
-                    'new_converts' => 0,
-                    'attendance_total' => 0,
+                'summary'       => [
+                    'first_timers'    => 0,
+                    'new_converts'    => 0,
+                    'attendance_total'=> 0,
                 ],
                 'error' => 'No zone assigned to your account. Contact the administrator.',
             ]);
         }
 
-        $zone = Zone::find($user->zone_id);
+        // 2) IDs of homecells in this zone
+        $homecellIds   = $zone->homecells->pluck('id');
+        $homecellCount = $zone->homecells->count();
 
-        // Fetch zone-specific statistics
-        $homecellCount = Homecell::where('zone_id', $zone->id)->count();
-        $memberCount = Member::whereHas('homecell', fn($q) => $q->where('zone_id', $zone->id))->count();
+        // 3) Members under those homecells
+        //    (If your schema stores zone_id directly on members, switch to ->where('zone_id', $zone->id))
+        $memberCount = Member::whereIn('homecell_id', $homecellIds)->count();
 
-        // Get recent reports submitted for this zone
+        // 4) Recent reports for homecells in this zone
         $recentReports = HomecellReport::with('homecell')
-            ->where('zone_id', $zone->id)
+            ->whereIn('homecell_id', $homecellIds)
             ->latest()
-            ->take(5)
+            ->take(10)
             ->get();
 
-        // Summary totals (from all reports in zone)
+        // 5) Summary totals across all reports in these homecells
+        $totals = HomecellReport::whereIn('homecell_id', $homecellIds)
+            ->selectRaw('
+                COALESCE(SUM(first_timers), 0)         AS ft,
+                COALESCE(SUM(new_converts), 0)         AS nc,
+                COALESCE(SUM(males + females), 0)      AS att
+            ')
+            ->first();
+
         $summary = [
-            'first_timers' => HomecellReport::where('zone_id', $zone->id)->sum('first_timers'),
-            'new_converts' => HomecellReport::where('zone_id', $zone->id)->sum('new_converts'),
-            'attendance_total' => HomecellReport::where('zone_id', $zone->id)
-                ->selectRaw('SUM(males + females) as total')
-                ->value('total') ?? 0,
+            'first_timers'     => (int) ($totals->ft  ?? 0),
+            'new_converts'     => (int) ($totals->nc  ?? 0),
+            'attendance_total' => (int) ($totals->att ?? 0),
         ];
 
         return view('dashboards.zone', compact(

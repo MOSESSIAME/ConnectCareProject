@@ -22,11 +22,27 @@ class Communication extends Model
     ];
 
     protected $casts = [
-        'filters'      => 'array',
+        'filters'      => 'array',     // ✅ ensures always array, not string
         'scheduled_at' => 'datetime',
         'sent_at'      => 'datetime',
     ];
 
+    // --- Optional: Defensive getter for filters ---
+    // If the DB somehow stores it as JSON text or NULL, this normalizes it.
+    public function getFiltersAttribute($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return json_decode($value, true) ?: [];
+        }
+
+        return [];
+    }
+
+    // --- Relationships ---
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');

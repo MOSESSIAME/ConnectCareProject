@@ -3,8 +3,6 @@
 @push('styles')
 <style>
 /* Hide the floating footer on the right side */
-/* body > div[style*="position: fixed"], */
-/* body > div.text-muted, */
 body > p.text-muted {
     display: none !important;
 }
@@ -50,14 +48,30 @@ body > p.text-muted {
                     <input id="email" type="email" 
                            class="form-control form-control-lg @error('email') is-invalid @enderror"
                            name="email" value="{{ old('email') }}" required autofocus
-                           placeholder="Enter your email">
+                           placeholder="Enter your email" autocomplete="username">
                 </div>
 
                 <div class="mb-3">
                     <label for="password" class="form-label fw-semibold">Password</label>
-                    <input id="password" type="password" 
-                           class="form-control form-control-lg @error('password') is-invalid @enderror"
-                           name="password" required placeholder="Enter your password">
+                    <div class="input-group input-group-lg">
+                        <input id="password" type="password"
+                               class="form-control form-control-lg @error('password') is-invalid @enderror"
+                               name="password" required placeholder="Enter your password"
+                               autocomplete="current-password">
+                        <button type="button" class="btn btn-outline-secondary"
+                                aria-label="Show password"
+                                onclick="
+                                    const input = this.previousElementSibling;
+                                    const icon  = this.querySelector('i');
+                                    const show  = input.type === 'password';
+                                    input.type  = show ? 'text' : 'password';
+                                    this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                                    icon.classList.toggle('bi-eye', !show);
+                                    icon.classList.toggle('bi-eye-slash', show);
+                                ">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -65,12 +79,6 @@ body > p.text-muted {
                         <input class="form-check-input" type="checkbox" name="remember" id="remember">
                         <label class="form-check-label small" for="remember">Remember me</label>
                     </div>
-
-                    {{-- @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="small text-decoration-none text-primary fw-semibold">
-                            Forgot Password?
-                        </a>
-                    @endif --}}
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">

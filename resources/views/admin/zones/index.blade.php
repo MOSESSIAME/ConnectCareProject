@@ -19,6 +19,7 @@
                     <th>#</th>
                     <th>Name</th>
                     <th>District</th>
+                    <th>Leader</th>
                     <th>Created</th>
                     <th style="width: 220px;">Actions</th>
                 </tr>
@@ -26,9 +27,10 @@
             <tbody>
                 @forelse($records as $item)
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ ($records->currentPage()-1)*$records->perPage() + $loop->iteration }}</td>
                         <td>{{ $item->name }}</td>
                         <td>{{ $item->district->name ?? '—' }}</td>
+                        <td>{{ $item->leader->name ?? '—' }}</td> {{-- new --}}
                         <td>{{ $item->created_at?->format('Y-m-d') }}</td>
                         <td>
                             <a href="{{ route('admin.zones.edit', $item) }}" class="btn btn-sm btn-warning">
@@ -47,7 +49,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No zones found.</td>
+                        <td colspan="6" class="text-center text-muted">No zones found.</td>
                     </tr>
                 @endforelse
             </tbody>

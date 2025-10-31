@@ -4,50 +4,49 @@ namespace App\Http\Controllers;
 
 use App\Models\Zone;
 use App\Models\District;
+use App\Models\User;            // <-- add
 use Illuminate\Http\Request;
 
 class ZoneController extends Controller
 {
-    /**
-     * Display a list of all zones (Admin).
-     */
     public function index()
     {
-        // Eager-load district so the table can show it
-        $records = Zone::with('district')->paginate(10);
+        // Eager-load district + leader so the table can show both
+        $records = Zone::with(['district', 'leader'])->paginate(10);
 
         $title  = 'Zones';
         $route  = 'admin.zones';
-        $showDistrictColumn = true; // tell the view to render the column
+        $showDistrictColumn = true;
 
         return view('admin.zones.index', compact('records', 'title', 'route', 'showDistrictColumn'));
     }
 
-    /**
-     * Show the form for creating a new zone.
-     */
     public function create()
     {
         $title     = 'Zones';
         $route     = 'admin.zones';
         $districts = District::orderBy('name')->get(['id','name']);
 
-        return view('admin.zones.create', compact('title', 'route', 'districts'));
+        // Only users with the "Zonal Leader" role
+        $leaders = User::whereHas('role', fn($q) => $q->where('name', 'Zonal Leader'))
+            ->orderBy('name')
+            ->get(['id','name']);
+
+        return view('admin.zones.create', compact('title', 'route', 'districts', 'leaders'));
     }
 
-    /**
-     * Store a newly created zone in the database.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'name'        => 'required|string|max:100|unique:zones,name',
             'district_id' => 'required|exists:districts,id',
+            'leader_id'   => 'nullable|exists:users,id',
         ]);
 
         Zone::create([
             'name'        => $request->name,
             'district_id' => $request->district_id,
+            'leader_id'   => $request->leader_id,  // <-- new
         ]);
 
         return redirect()
@@ -55,9 +54,6 @@ class ZoneController extends Controller
             ->with('success', 'Zone created successfully!');
     }
 
-    /**
-     * Show the form for editing the specified zone.
-     */
     public function edit(Zone $zone)
     {
         $item      = $zone;
@@ -65,22 +61,25 @@ class ZoneController extends Controller
         $route     = 'admin.zones';
         $districts = District::orderBy('name')->get(['id','name']);
 
-        return view('admin.zones.edit', compact('item', 'title', 'route', 'districts'));
+        $leaders = User::whereHas('role', fn($q) => $q->where('name', 'Zonal Leader'))
+            ->orderBy('name')
+            ->get(['id','name']);
+
+        return view('admin.zones.edit', compact('item', 'title', 'route', 'districts', 'leaders'));
     }
 
-    /**
-     * Update the specified zone in the database.
-     */
     public function update(Request $request, Zone $zone)
     {
         $request->validate([
             'name'        => 'required|string|max:100|unique:zones,name,' . $zone->id,
             'district_id' => 'required|exists:districts,id',
+            'leader_id'   => 'nullable|exists:users,id',
         ]);
 
         $zone->update([
             'name'        => $request->name,
             'district_id' => $request->district_id,
+            'leader_id'   => $request->leader_id,   // <-- new
         ]);
 
         return redirect()
@@ -88,9 +87,6 @@ class ZoneController extends Controller
             ->with('success', 'Zone updated successfully!');
     }
 
-    /**
-     * Remove the specified zone from the database.
-     */
     public function destroy(Zone $zone)
     {
         $zone->delete();
