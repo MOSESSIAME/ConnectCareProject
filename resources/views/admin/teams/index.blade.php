@@ -23,7 +23,7 @@
                     <th>Name</th>
                     <th>Leader</th>
                     <th>Created</th>
-                    <th>Actions</th>
+                    <th style="width: 320px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,9 +34,14 @@
                         <td>{{ $team->leader->name ?? '—' }}</td>
                         <td>{{ $team->created_at?->format('Y-m-d') }}</td>
                         <td>
+                            <a href="{{ route('admin.teams.members', $team) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-people"></i> Manage Members
+                            </a>
+
                             <a href="{{ route('admin.teams.edit', $team) }}" class="btn btn-sm btn-warning">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
+
                             <form action="{{ route('admin.teams.destroy', $team) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')

@@ -12,7 +12,7 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ChurchController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\DynamicDropdownController;
-use App\Http\Controllers\FollowUpHistoryController;
+use App\Http\Controllers\FollowUpHistoryController;   // (kept if you still use it elsewhere)
 use App\Http\Controllers\FollowUpReportController;
 use App\Http\Controllers\HomecellController;
 use App\Http\Controllers\HomecellLeaderDashboardController;
@@ -28,10 +28,15 @@ use App\Http\Controllers\TeamDashboardController;
 use App\Http\Controllers\TeamMemberDashboardController;
 use App\Http\Controllers\ZoneController;
 use App\Http\Controllers\ZonalDashboardController;
+use App\Http\Controllers\Admin\TeamMemberController;
+use App\Http\Controllers\FollowUpController;
 
-// NEW: communications + templates
+// communications + templates
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\TemplateController;
+
+// ✅ move service import to the top (prevents “unexpected token use”)
+use App\Services\SmsClient;
 
 /*
 |--------------------------------------------------------------------------
@@ -247,19 +252,27 @@ Route::middleware(['auth', 'role:Admin,Team Leader'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:Admin,Team Leader,Team Member,Staff'])->group(function () {
-    Route::get('/followups', [FollowUpHistoryController::class, 'myFollowUps'])
+    // ✅ Make /followups work for old links expecting name 'followups.my'
+    Route::get('/followups', [FollowUpController::class, 'index'])
         ->name('followups.my');
 
-    Route::get('/followups/{assignment}', [FollowUpHistoryController::class, 'index'])
-        ->whereNumber('assignment')->name('followups.index');
+    // (Optional) also expose an /followups/all alias with name 'followups.index'
+    Route::get('/followups/all', [FollowUpController::class, 'index'])
+        ->name('followups.index');
 
-    Route::get('/followups/{assignment}/create', [FollowUpHistoryController::class, 'create'])
+    // Create/store follow-up for a specific assignment
+    Route::get('/followups/{assignment}/create', [FollowUpController::class, 'create'])
         ->whereNumber('assignment')->name('followups.create');
 
-    Route::post('/followups/{assignment}', [FollowUpHistoryController::class, 'store'])
+    Route::post('/followups/{assignment}', [FollowUpController::class, 'store'])
         ->whereNumber('assignment')->name('followups.store');
 
-    Route::post('/followups/complete/{id}', [FollowUpHistoryController::class, 'complete'])
+    // List follow-ups for a specific assignment
+    Route::get('/followups/{assignment}', [FollowUpController::class, 'assignmentIndex'])
+        ->whereNumber('assignment')->name('followups.assignment');
+
+    // Mark a follow-up as completed
+    Route::post('/followups/complete/{id}', [FollowUpController::class, 'complete'])
         ->whereNumber('id')->name('followups.complete');
 });
 
@@ -292,30 +305,22 @@ Route::middleware(['auth', 'role:Admin,Pastor,Staff'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth','role:Admin,Pastor,Staff'])->group(function () {
-    // Communications
     Route::resource('communications', CommunicationController::class)
         ->only(['index','create','store','show']);
 
-    // Templates (this is what powers route('templates.index') in the navbar)
     Route::resource('templates', TemplateController::class);
 });
 
-
-
-
-
-// Twilio testing 
-
-
-
-
-use App\Services\SmsClient;
-
+/*
+|--------------------------------------------------------------------------
+| Twilio testing
+|--------------------------------------------------------------------------
+*/
 Route::get('/test-sms', function () {
     $sms = new SmsClient();
 
     try {
-        $to = '+260979964985'; // 🔹 Replace with your verified number
+        $to = '+260979964985'; // replace with your verified number
         $sid = $sms->send($to, 'Hello from ConnectCare via Twilio 🎉');
         return "✅ SMS sent successfully! Message SID: {$sid}";
     } catch (Exception $e) {
@@ -330,10 +335,13 @@ Route::get('/test-sms', function () {
 */
 require __DIR__ . '/auth.php';
 
-
-
-
-
-
-
-
+/*
+|--------------------------------------------------------------------------
+| Team member management (Admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('teams/{team}/members', [TeamMemberController::class, 'index'])->name('teams.members');
+    Route::post('teams/{team}/members', [TeamMemberController::class, 'store'])->name('teams.members.store');
+    Route::delete('teams/{team}/members/{user}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
+});

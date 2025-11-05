@@ -3,7 +3,8 @@
 @section('content')
 <div class="container py-4">
     <h2 class="fw-bold text-primary mb-3">
-        <i class="bi bi-clipboard-check me-2"></i> Follow-ups for {{ $assignment->member->full_name ?? 'N/A' }}
+        <i class="bi bi-clipboard-check me-2"></i>
+        Follow-ups for {{ $assignment->member->full_name ?? 'N/A' }}
     </h2>
 
     <p class="text-muted mb-4">
@@ -28,33 +29,71 @@
                     <table class="table table-striped table-bordered align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>#</th>
-                                <th>Method</th>
-                                <th>Outcome</th>
-                                <th>Status</th>
-                                <th>Date Logged</th>
+                                <th style="width: 60px;">#</th>
+                                <th style="width: 140px;">Method</th>
+                                <th>Notes</th>
+                                <th style="width: 180px;">Outcome</th>
+                                <th style="width: 160px;">Status</th>
+                                <th style="width: 160px;">Date Logged</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($histories as $key => $followup)
+                            @foreach($histories as $i => $followup)
                                 <tr>
-                                    <td>{{ $key + 1 }}</td>
+                                    <td>{{ $i + 1 }}</td>
+
                                     <td>{{ $followup->method }}</td>
-                                    <td>{{ $followup->outcome ?? '—' }}</td>
+
                                     <td>
-                                        <span class="badge 
-                                            @if($followup->status === 'Completed') bg-success
-                                            @elseif($followup->status === 'In Progress') bg-info
-                                            @else bg-warning text-dark @endif">
-                                            {{ $followup->status }}
-                                        </span>
+                                        @php
+                                            $notes = trim((string) $followup->notes);
+                                        @endphp
+                                        @if($notes !== '')
+                                            <span title="{{ $notes }}">
+                                                {{ \Illuminate\Support\Str::limit($notes, 120) }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
                                     </td>
+
+                                    <td>
+                                        @php
+                                            $outcome = $followup->outcome ?? '—';
+                                            $outcomeClass = match($outcome) {
+                                                'Reached', 'Visited', 'Prayed With' => 'bg-success',
+                                                'No Answer', 'Busy', 'Switched Off', 'Left Message' => 'bg-warning text-dark',
+                                                'Wrong Number', 'Declined' => 'bg-danger',
+                                                default => 'bg-secondary'
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $outcomeClass }}">{{ $outcome }}</span>
+                                    </td>
+
+                                    <td>
+                                        @php
+                                            $statusClass = match($followup->status) {
+                                                'Completed' => 'bg-success',
+                                                'In Progress' => 'bg-info',
+                                                default => 'bg-warning text-dark'
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $statusClass }}">{{ $followup->status }}</span>
+                                    </td>
+
                                     <td>{{ $followup->created_at->format('d M Y') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+
+                {{-- If $histories is a paginator, show links --}}
+                @if(method_exists($histories, 'links'))
+                    <div class="mt-3">
+                        {{ $histories->links() }}
+                    </div>
+                @endif
             @else
                 <div class="alert alert-light border text-center mb-0">
                     <i class="bi bi-info-circle text-primary me-1"></i>

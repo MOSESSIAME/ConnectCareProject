@@ -2,61 +2,62 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\District;
-use App\Models\Zone;
 use App\Models\Homecell;
+use App\Models\Zone;
+use Illuminate\Http\JsonResponse;
 
 class DynamicDropdownController extends Controller
 {
     /**
-     * Get districts based on church
+     * GET /get-districts/{church_id}
+     * Return districts for a church as [{id,name}]
      */
-    public function getDistricts($church_id)
+    public function getDistricts($church_id): JsonResponse
     {
-        if (!$church_id) {
-            return response()->json([], 400);
+        if (!is_numeric($church_id)) {
+            return response()->json(['data' => []], 400);
         }
 
-        $districts = District::where('church_id', $church_id)
-            ->select('id', 'name')
+        $districts = District::where('church_id', (int) $church_id)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name']);
 
-        return response()->json($districts, 200);
+        // Front-end can read response.data or the array directly
+        return response()->json(['data' => $districts], 200);
     }
 
     /**
-     * Get zones based on district
+     * GET /get-zones/{district_id}
+     * Return zones for a district as [{id,name}]
      */
-    public function getZones($district_id)
+    public function getZones($district_id): JsonResponse
     {
-        if (!$district_id) {
-            return response()->json([], 400);
+        if (!is_numeric($district_id)) {
+            return response()->json(['data' => []], 400);
         }
 
-        $zones = Zone::where('district_id', $district_id)
-            ->select('id', 'name')
+        $zones = Zone::where('district_id', (int) $district_id)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name']);
 
-        return response()->json($zones, 200);
+        return response()->json(['data' => $zones], 200);
     }
 
     /**
-     * Get homecells based on zone
+     * GET /get-homecells/{zone_id}
+     * Return homecells for a zone as [{id,name}]
      */
-    public function getHomecells($zone_id)
+    public function getHomecells($zone_id): JsonResponse
     {
-        if (!$zone_id) {
-            return response()->json([], 400);
+        if (!is_numeric($zone_id)) {
+            return response()->json(['data' => []], 400);
         }
 
-        $homecells = Homecell::where('zone_id', $zone_id)
-            ->select('id', 'name')
+        $homecells = Homecell::where('zone_id', (int) $zone_id)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name']);
 
-        return response()->json($homecells, 200);
+        return response()->json(['data' => $homecells], 200);
     }
 }

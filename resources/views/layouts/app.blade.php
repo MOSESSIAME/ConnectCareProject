@@ -47,12 +47,17 @@
 
         {{-- Collapsible content --}}
         <div id="mainNav" class="collapse navbar-collapse">
-            {{-- LEFT: primary navigation (aligned left, grows) --}}
+            {{-- LEFT: primary navigation --}}
             <ul class="navbar-nav gapped me-auto align-items-lg-center">
                 @auth
                     @php
                         $role = auth()->user()->role->name ?? '';
                         $is = fn (...$patterns) => request()->routeIs(...$patterns) || request()->is(...$patterns);
+
+                        // Resolve a valid target for "My Follow-ups" regardless of which route set is active
+                        $followupsRouteName = \Illuminate\Support\Facades\Route::has('followups.my')
+                            ? 'followups.my'
+                            : (\Illuminate\Support\Facades\Route::has('followups.index') ? 'followups.index' : null);
                     @endphp
 
                     {{-- ================= ADMIN ================= --}}
@@ -166,10 +171,6 @@
 
                     {{-- ================= STAFF ================= --}}
                     @elseif($role === 'Staff')
-                        {{-- <li class="nav-item">
-                            <a href="{{ route('team-member.dashboard') }}"
-                               class="nav-link {{ $is('team-member.dashboard') ? 'active' : '' }}">Dashboard</a>
-                        </li> --}}
                         <li class="nav-item">
                             <a href="{{ route('members.index') }}"
                                class="nav-link {{ $is('members.*') ? 'active' : '' }}">Members</a>
@@ -184,17 +185,6 @@
                                 <li><a class="dropdown-item" href="{{ route('attendance.index') }}">Service Attendance</a></li>
                             </ul>
                         </li>
-                        {{-- <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {{ $is('communications*','templates*') ? 'active' : '' }}"
-                               href="#" id="staffCommDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Communications
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="staffCommDropdown">
-                                <li><a class="dropdown-item" href="{{ route('communications.create') }}">Compose</a></li>
-                                <li><a class="dropdown-item" href="{{ route('communications.index') }}">All Messages</a></li>
-                                <li><a class="dropdown-item" href="{{ route('templates.index') }}">Templates</a></li>
-                            </ul>
-                        </li> --}}
 
                     {{-- ================= ZONAL LEADER ================= --}}
                     @elseif($role === 'Zonal Leader')
@@ -205,12 +195,12 @@
                         <li class="nav-item">
                             <a href="{{ route('reports.homecells.index') }}"
                                class="nav-link {{ $is('reports.homecells.*') ? 'active' : '' }}">Homecells</a>
-                        </li
+                        </li>
                         <li class="nav-item">
                             <a href="{{ route('reports.dashboard') }}"
-                               class="nav-link {{ $is('reports.dashboard') ? 'active' : '' }}">   </a>
+                               class="nav-link {{ $is('reports.dashboard') ? 'active' : '' }}">Reports</a>
                         </li>
-                       
+
                     {{-- ================= HOMECELL LEADER ================= --}}
                     @elseif($role === 'Homecell Leader')
                         <li class="nav-item">
@@ -245,10 +235,12 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('followups.my') }}"
-                               class="nav-link {{ $is('followups.my') ? 'active' : '' }}">My Follow-ups</a>
-                        </li>
+                        @if($followupsRouteName)
+                            <li class="nav-item">
+                                <a href="{{ route($followupsRouteName) }}"
+                                   class="nav-link {{ $is($followupsRouteName) ? 'active' : '' }}">My Follow-ups</a>
+                            </li>
+                        @endif
 
                         <li class="nav-item">
                             <a href="{{ route('reports.followups') }}"
@@ -269,15 +261,17 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('followups.my') }}"
-                               class="nav-link {{ $is('followups.my') ? 'active' : '' }}">My Follow-ups</a>
-                        </li>
+                        @if($followupsRouteName)
+                            <li class="nav-item">
+                                <a href="{{ route($followupsRouteName) }}"
+                                   class="nav-link {{ $is($followupsRouteName) ? 'active' : '' }}">My Follow-ups</a>
+                            </li>
+                        @endif
                     @endif
                 @endauth
             </ul>
 
-            {{-- RIGHT: auth actions (always right aligned) --}}
+            {{-- RIGHT: auth actions --}}
             <ul class="navbar-nav align-items-lg-center">
                 @auth
                     <li class="nav-item">

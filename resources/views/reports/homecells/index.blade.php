@@ -15,7 +15,7 @@
             {{-- Church --}}
             <div class="col-md-3">
                 <label for="church_id" class="form-label">Church</label>
-                <select name="church_id" id="church_id" class="form-control">
+                <select name="church_id" id="church_id" class="form-control" data-old="{{ request('church_id') }}">
                     <option value="">-- All Churches --</option>
                     @foreach($churches as $church)
                         <option value="{{ $church->id }}" {{ request('church_id') == $church->id ? 'selected' : '' }}>
@@ -28,7 +28,7 @@
             {{-- District --}}
             <div class="col-md-3">
                 <label for="district_id" class="form-label">District</label>
-                <select name="district_id" id="district_id" class="form-control">
+                <select name="district_id" id="district_id" class="form-control" data-old="{{ request('district_id') }}">
                     <option value="">-- All Districts --</option>
                 </select>
             </div>
@@ -36,7 +36,7 @@
             {{-- Zone --}}
             <div class="col-md-3">
                 <label for="zone_id" class="form-label">Zone</label>
-                <select name="zone_id" id="zone_id" class="form-control">
+                <select name="zone_id" id="zone_id" class="form-control" data-old="{{ request('zone_id') }}">
                     <option value="">-- All Zones --</option>
                 </select>
             </div>
@@ -44,7 +44,7 @@
             {{-- Homecell --}}
             <div class="col-md-3">
                 <label for="homecell_id" class="form-label">Homecell</label>
-                <select name="homecell_id" id="homecell_id" class="form-control">
+                <select name="homecell_id" id="homecell_id" class="form-control" data-old="{{ request('homecell_id') }}">
                     <option value="">-- All Homecells --</option>
                 </select>
             </div>
@@ -78,7 +78,6 @@
             <tbody>
                 @forelse($reports as $r)
                     @php
-                        // Robust labels: if direct FK is null, infer via homecell -> zone -> district -> church
                         $churchName   = optional($r->church)->name
                                      ?? optional(optional(optional($r->homecell)->zone)->district->church)->name;
 
@@ -125,62 +124,91 @@
 {{-- Cascading dropdowns --}}
 <script>
 $(function () {
-    const oldChurch   = '{{ request('church_id') }}';
-    const oldDistrict = '{{ request('district_id') }}';
-    const oldZone     = '{{ request('zone_id') }}';
-    const oldHomecell = '{{ request('homecell_id') }}';
+  const $church   = $('#church_id');
+  const $district = $('#district_id');
+  const $zone     = $('#zone_id');
+  const $homecell = $('#homecell_id');
 
-    function fillSelect($el, placeholder, items) {
-        $el.html(`<option value="">${placeholder}</option>`);
-        if (Array.isArray(items)) {
-            items.forEach(it => $el.append(`<option value="${it.id}">${it.name}</option>`));
-        }
+  const ENDPOINTS = {
+    districts: '{{ url('/get-districts') }}/',
+    zones:     '{{ url('/get-zones') }}/',
+    homecells: '{{ url('/get-homecells') }}/'
+  };
+
+  function fill($el, placeholder, items) {
+    $el.html(`<option value="">${placeholder}</option>`);
+    (items || []).forEach(it => $el.append(`<option value="${it.id}">${it.name}</option>`));
+    if (!items || items.length === 0) {
+      $el.append('<option value="" disabled>(No records found)</option>');
     }
+  }
 
-    // On Church change -> load districts
-    $('#church_id').on('change', function () {
-        const churchId = $(this).val();
-        fillSelect($('#district_id'), '-- All Districts --');
-        fillSelect($('#zone_id'),     '-- All Zones --');
-        fillSelect($('#homecell_id'), '-- All Homecells --');
-
-        if (!churchId) return;
-
-        $.get(`{{ url('get-districts') }}/${churchId}`)
-            .done(data => {
-                fillSelect($('#district_id'), '-- All Districts --', data);
-                if (oldDistrict) $('#district_id').val(oldDistrict).trigger('change');
-            });
-    }).trigger('change');
-
-    // On District change -> load zones
-    $('#district_id').on('change', function () {
-        const districtId = $(this).val();
-        fillSelect($('#zone_id'),     '-- All Zones --');
-        fillSelect($('#homecell_id'), '-- All Homecells --');
-
-        if (!districtId) return;
-
-        $.get(`{{ url('get-zones') }}/${districtId}`)
-            .done(data => {
-                fillSelect($('#zone_id'), '-- All Zones --', data);
-                if (oldZone) $('#zone_id').val(oldZone).trigger('change');
-            });
+  // 🔁 Normalize JSON: accept array OR {data:[...]}
+  function ajaxJSON(url, ok) {
+    $.ajax({
+      url,
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      dataType: 'json'
+    })
+    .done(resp => {
+      console.log('[Filter]', url, '→', resp);
+      const data = Array.isArray(resp) ? resp
+                : (resp && Array.isArray(resp.data) ? resp.data : []);
+      ok(data);
+    })
+    .fail(xhr => {
+      console.error('[Filter] Error', xhr.status, xhr.responseText);
+      ok([]);
     });
+  }
 
-    // On Zone change -> load homecells
-    $('#zone_id').on('change', function () {
-        const zoneId = $(this).val();
-        fillSelect($('#homecell_id'), '-- All Homecells --');
+  // Church → Districts
+  $church.on('change', function () {
+    const id = $(this).val();
+    fill($district, '-- All Districts --', []);
+    fill($zone,     '-- All Zones --', []);
+    fill($homecell, '-- All Homecells --', []);
+    if (!id) return;
 
-        if (!zoneId) return;
-
-        $.get(`{{ url('get-homecells') }}/${zoneId}`)
-            .done(data => {
-                fillSelect($('#homecell_id'), '-- All Homecells --', data);
-                if (oldHomecell) $('#homecell_id').val(oldHomecell);
-            });
+    ajaxJSON(ENDPOINTS.districts + encodeURIComponent(id), (data) => {
+      fill($district, '-- All Districts --', data);
+      const old = $district.data('old');
+      if (old) { $district.val(old).trigger('change'); $district.data('old',''); }
     });
+  });
+
+  // District → Zones
+  $district.on('change', function () {
+    const id = $(this).val();
+    fill($zone,     '-- All Zones --', []);
+    fill($homecell, '-- All Homecells --', []);
+    if (!id) return;
+
+    ajaxJSON(ENDPOINTS.zones + encodeURIComponent(id), (data) => {
+      fill($zone, '-- All Zones --', data);
+      const old = $zone.data('old');
+      if (old) { $zone.val(old).trigger('change'); $zone.data('old',''); }
+    });
+  });
+
+  // Zone → Homecells
+  $zone.on('change', function () {
+    const id = $(this).val();
+    fill($homecell, '-- All Homecells --', []);
+    if (!id) return;
+
+    ajaxJSON(ENDPOINTS.homecells + encodeURIComponent(id), (data) => {
+      fill($homecell, '-- All Homecells --', data);
+      const old = $homecell.data('old');
+      if (old) { $homecell.val(old); $homecell.data('old',''); }
+    });
+  });
+
+  // Kick the chain with previous filter values preserved
+  const oldChurch = $church.data('old');
+  if (oldChurch) { $church.val(oldChurch); }
+  $church.trigger('change');
 });
 </script>
 @endsection

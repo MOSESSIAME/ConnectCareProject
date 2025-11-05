@@ -10,7 +10,7 @@ class FollowUpHistory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'follow_up_histories'; // ✅ explicitly define table name
+    protected $table = 'follow_up_histories';
 
     protected $fillable = [
         'assignment_id',
@@ -20,8 +20,42 @@ class FollowUpHistory extends Model
         'status',
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+
+    /** ✅ Fixed dropdown lists */
+    public const METHODS = [
+        'Call',
+        'Visit',
+        'SMS',
+        'WhatsApp',
+        'Other',
+    ];
+
+    public const OUTCOMES = [
+        'Reached',
+        'No Answer',
+        'Busy',
+        'Switched Off',
+        'Wrong Number',
+        'Left Message',
+        'Rescheduled',
+        'Visited',
+        'Prayed With',
+        'Declined',
+        'Other',
+    ];
+
+    public const STATUSES = [
+        'Pending',
+        'Completed',
+    ];
+
     /**
-     * A follow-up belongs to a specific assignment.
+     * Relationship: belongs to Assignment
      */
     public function assignment()
     {
@@ -29,17 +63,19 @@ class FollowUpHistory extends Model
     }
 
     /**
-     * Shortcut relationship — access member through assignment.
+     * Accessor: $followUpHistory->member
+     * Returns the related Member through Assignment
      */
-    public function member()
+    public function getMemberAttribute()
     {
-        return $this->hasOneThrough(
-            Member::class,
-            Assignment::class,
-            'id',          // Foreign key on assignments table
-            'id',          // Foreign key on members table
-            'assignment_id',
-            'member_id'
-        );
+        return $this->assignment?->member;
+    }
+
+    /**
+     * Scope: eager-load related assignment + member
+     */
+    public function scopeWithMember($query)
+    {
+        return $query->with(['assignment.member']);
     }
 }

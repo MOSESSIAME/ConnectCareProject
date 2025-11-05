@@ -9,6 +9,12 @@
         View all follow-ups you’ve logged so far on assigned members.
     </p>
 
+    {{-- normalize the incoming collection: support $followups OR $histories --}}
+    @php
+        /** @var \Illuminate\Support\Collection|\Illuminate\Contracts\Pagination\Paginator|null $rows */
+        $rows = $followups ?? $histories ?? collect();
+    @endphp
+
     {{-- ✅ Success message --}}
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -20,7 +26,7 @@
             <i class="bi bi-list-task me-1"></i> Follow-up Records
         </div>
         <div class="card-body">
-            @if($followups->count())
+            @if($rows && $rows->count())
                 <div class="table-responsive">
                     <table class="table table-striped table-bordered align-middle">
                         <thead class="table-dark">
@@ -34,9 +40,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($followups as $key => $followup)
+                            @foreach($rows as $index => $followup)
                                 <tr>
-                                    <td>{{ $key + 1 }}</td>
+                                    <td>{{ is_int($index) ? $index + 1 : $loop->iteration }}</td>
                                     <td>{{ $followup->assignment->member->full_name ?? 'N/A' }}</td>
                                     <td>{{ $followup->method }}</td>
                                     <td>{{ $followup->outcome ?? '—' }}</td>
@@ -49,17 +55,19 @@
                                             {{ $followup->status }}
                                         </span>
                                     </td>
-                                    <td>{{ $followup->created_at->format('d M Y') }}</td>
+                                    <td>{{ optional($followup->created_at)->format('d M Y') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Pagination --}}
-                <div class="mt-3">
-                    {{ $followups->links() }}
-                </div>
+                {{-- Pagination (only if paginator) --}}
+                @if(method_exists($rows, 'links'))
+                    <div class="mt-3">
+                        {{ $rows->links() }}
+                    </div>
+                @endif
             @else
                 <div class="alert alert-light border text-center mb-0">
                     <i class="bi bi-info-circle text-primary me-1"></i>

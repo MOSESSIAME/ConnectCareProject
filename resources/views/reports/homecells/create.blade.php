@@ -96,127 +96,99 @@
 
 <script>
 $(function () {
-    // Helpers
-    const $church   = $('#church_id');
-    const $district = $('#district_id');
-    const $zone     = $('#zone_id');
-    const $homecell = $('#homecell_id');
+  const $church   = $('#church_id');
+  const $district = $('#district_id');
+  const $zone     = $('#zone_id');
+  const $homecell = $('#homecell_id');
 
-    const ENDPOINTS = {
-        districts: '{{ url('/get-districts') }}/',   // + {church_id}
-        zones:     '{{ url('/get-zones') }}/',       // + {district_id}
-        homecells: '{{ url('/get-homecells') }}/'    // + {zone_id}
-    };
+  const ENDPOINTS = {
+    districts: '{{ url('/get-districts') }}/',   // + {church_id}
+    zones:     '{{ url('/get-zones') }}/',       // + {district_id}
+    homecells: '{{ url('/get-homecells') }}/'    // + {zone_id}
+  };
 
-    function resetSelect($el, placeholder, disable = true) {
-        $el.html(`<option value="">${placeholder}</option>`).prop('disabled', !!disable);
+  function resetSelect($el, placeholder, disable = true) {
+    $el.html(`<option value="">${placeholder}</option>`).prop('disabled', !!disable);
+  }
+  function fillSelect($el, items, placeholder) {
+    resetSelect($el, placeholder, false);
+    (items || []).forEach(i => $el.append(`<option value="${i.id}">${i.name}</option>`));
+    if (!items || items.length === 0) {
+      $el.append('<option value="" disabled>(No records found)</option>');
     }
-    function fillSelect($el, items, placeholder) {
-        resetSelect($el, placeholder, false);
-        items.forEach(i => $el.append(`<option value="${i.id}">${i.name}</option>`));
+  }
+  function resetFrom(level) {
+    if (level === 'church') {
+      resetSelect($district, '-- Select District --');
+      resetSelect($zone, '-- Select Zone --');
+      resetSelect($homecell, '-- Select Homecell --');
+    } else if (level === 'district') {
+      resetSelect($zone, '-- Select Zone --');
+      resetSelect($homecell, '-- Select Homecell --');
+    } else if (level === 'zone') {
+      resetSelect($homecell, '-- Select Homecell --');
     }
-    function looksLikeHtml(str){ return /<\/?[a-z][\s\S]*>/i.test(str); }
+  }
 
-    // Chain resets
-    function resetFrom(level) {
-        if (level === 'church') {
-            resetSelect($district, '-- Select District --');
-            resetSelect($zone, '-- Select Zone --');
-            resetSelect($homecell, '-- Select Homecell --');
-        } else if (level === 'district') {
-            resetSelect($zone, '-- Select Zone --');
-            resetSelect($homecell, '-- Select Homecell --');
-        } else if (level === 'zone') {
-            resetSelect($homecell, '-- Select Homecell --');
-        }
-    }
-
-    // 1) Church -> Districts
-    $church.on('change', function () {
-        const id = $(this).val();
-        resetFrom('church');
-        if (!id) return;
-
-        $.ajax({
-            url: ENDPOINTS.districts + encodeURIComponent(id),
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                if (!Array.isArray(data) || looksLikeHtml(JSON.stringify(data))) return;
-                fillSelect($district, data, '-- Select District --');
-
-                // restore old district if any
-                const oldId = $district.data('old');
-                if (oldId) {
-                    $district.val(String(oldId)).trigger('change');
-                    $district.data('old', ''); // clear to avoid loops
-                }
-            },
-            error: function (xhr) {
-                console.error('Districts error:', xhr.responseText || xhr.statusText);
-            }
-        });
+  // 🔁 Normalize JSON: accept array OR {data:[...]}
+  function ajaxJSON(url, onOk) {
+    $.ajax({
+      url,
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      dataType: 'json'
+    })
+    .done(resp => {
+      console.log('[DD]', url, '→', resp);
+      const data = Array.isArray(resp) ? resp
+                : (resp && Array.isArray(resp.data) ? resp.data : []);
+      onOk(data);
+    })
+    .fail(xhr => {
+      console.error('[DD] Error', xhr.status, xhr.responseText);
+      onOk([]);
     });
+  }
 
-    // 2) District -> Zones
-    $district.on('change', function () {
-        const id = $(this).val();
-        resetFrom('district');
-        if (!id) return;
-
-        $.ajax({
-            url: ENDPOINTS.zones + encodeURIComponent(id),
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                if (!Array.isArray(data) || looksLikeHtml(JSON.stringify(data))) return;
-                fillSelect($zone, data, '-- Select Zone --');
-
-                // restore old zone if any
-                const oldId = $zone.data('old');
-                if (oldId) {
-                    $zone.val(String(oldId)).trigger('change');
-                    $zone.data('old', '');
-                }
-            },
-            error: function (xhr) {
-                console.error('Zones error:', xhr.responseText || xhr.statusText);
-            }
-        });
+  // 1) Church → Districts
+  $church.on('change', function () {
+    const id = $(this).val();
+    resetFrom('church');
+    if (!id) return;
+    ajaxJSON(ENDPOINTS.districts + encodeURIComponent(id), (data) => {
+      fillSelect($district, data, '-- Select District --');
+      const old = $district.data('old');
+      if (old) { $district.val(String(old)).trigger('change'); $district.data('old',''); }
     });
+  });
 
-    // 3) Zone -> Homecells
-    $zone.on('change', function () {
-        const id = $(this).val();
-        resetFrom('zone');
-        if (!id) return;
-
-        $.ajax({
-            url: ENDPOINTS.homecells + encodeURIComponent(id),
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                if (!Array.isArray(data) || looksLikeHtml(JSON.stringify(data))) return;
-                fillSelect($homecell, data, '-- Select Homecell --');
-
-                // restore old homecell if any
-                const oldId = $homecell.data('old');
-                if (oldId) {
-                    $homecell.val(String(oldId));
-                    $homecell.data('old', '');
-                }
-            },
-            error: function (xhr) {
-                console.error('Homecells error:', xhr.responseText || xhr.statusText);
-            }
-        });
+  // 2) District → Zones
+  $district.on('change', function () {
+    const id = $(this).val();
+    resetFrom('district');
+    if (!id) return;
+    ajaxJSON(ENDPOINTS.zones + encodeURIComponent(id), (data) => {
+      fillSelect($zone, data, '-- Select Zone --');
+      const old = $zone.data('old');
+      if (old) { $zone.val(String(old)).trigger('change'); $zone.data('old',''); }
     });
+  });
 
-    // If the user is returning from a validation error, rehydrate all levels
-    const oldChurch = $church.data('old');
-    if (oldChurch) {
-        $church.val(String(oldChurch)).trigger('change');
-    }
+  // 3) Zone → Homecells
+  $zone.on('change', function () {
+    const id = $(this).val();
+    resetFrom('zone');
+    if (!id) return;
+    ajaxJSON(ENDPOINTS.homecells + encodeURIComponent(id), (data) => {
+      fillSelect($homecell, data, '-- Select Homecell --');
+      const old = $homecell.data('old');
+      if (old) { $homecell.val(String(old)); $homecell.data('old',''); }
+    });
+  });
+
+  // Rehydrate chain if user returned from validation errors
+  const oldChurch = $church.data('old');
+  if (oldChurch) { $church.val(String(oldChurch)).trigger('change'); }
 });
 </script>
 @endsection
