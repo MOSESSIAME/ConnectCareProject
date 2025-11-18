@@ -10,6 +10,9 @@
             default      => 'bg-secondary'
         };
     };
+
+    // Support both controller variable names: prefer $counts (new), fall back to $stats (legacy)
+    $k = $counts ?? ($stats ?? []);
 @endphp
 
 <div class="container py-3">
@@ -23,37 +26,31 @@
         </div>
     @endif
 
-    {{-- KPI row --}}
+    {{-- KPI row (Updated: show Active+Reassigned, Unassigned Members, Completed) --}}
     <div class="row g-3 mb-4 text-center">
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4" style="background:#6c757d">
-                <div class="card-body text-white">
-                    <div class="small opacity-75">Open</div>
-                    <div class="fs-1 fw-bold">{{ $stats['open'] ?? 0 }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4" style="background:#0d6efd">
                 <div class="card-body text-white">
-                    <div class="small opacity-75">In Progress</div>
-                    <div class="fs-1 fw-bold">{{ $stats['in_progress'] ?? 0 }}</div>
+                    <div class="small opacity-75">Active / Reassigned</div>
+                    <div class="fs-1 fw-bold">{{ $k['active_reassigned'] ?? $k['open'] ?? 0 }}</div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4" style="background:#ffc107">
+                <div class="card-body text-dark">
+                    <div class="small opacity-75">Unassigned Members</div>
+                    <div class="fs-1 fw-bold">{{ $k['unassigned_members'] ?? 0 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4" style="background:#198754">
                 <div class="card-body text-white">
                     <div class="small opacity-75">Completed</div>
-                    <div class="fs-1 fw-bold">{{ $stats['completed'] ?? 0 }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4" style="background:#dc3545">
-                <div class="card-body text-white">
-                    <div class="small opacity-75">Overdue</div>
-                    <div class="fs-1 fw-bold">{{ $stats['overdue'] ?? 0 }}</div>
+                    <div class="fs-1 fw-bold">{{ $k['completed'] ?? 0 }}</div>
                 </div>
             </div>
         </div>

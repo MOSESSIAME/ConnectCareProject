@@ -14,6 +14,7 @@ class Member extends Model
         'phone',
         'email',
         'type',
+        'address',
         'from_other_church',
         'note',
         'foundation_class_completed',

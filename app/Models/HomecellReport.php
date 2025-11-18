@@ -20,7 +20,7 @@ class HomecellReport extends Model
         // 'children', // <-- keep only if you actually use it
         'first_timers',
         'new_converts',
-        'testimonies',
+         'testimonies',
         'submitted_by', // or 'user_id' if that’s your column
     ];
 

@@ -61,7 +61,7 @@
                                 <th>Member</th>
                                 <th>Team</th>
                                 <th>Status</th>
-                                <th class="text-center" style="width: 20%">Actions</th>
+                                <th class="text-center" style="width: 26%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -91,12 +91,19 @@
                                     </td>
 
                                     <td class="text-center">
-                                        {{-- ✅ Updated Button --}}
-                                        <a href="{{ route('followups.index', $assignment->id) }}"
-                                           class="btn btn-sm btn-primary d-flex align-items-center justify-content-center gap-1 px-3 rounded-pill shadow-sm">
-                                            <i class="bi bi-chat-dots"></i>
-                                            <span>Open Follow-up</span>
-                                        </a>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            {{-- View follow-ups for this assignment --}}
+                                            <a href="{{ route('followups.assignment', $assignment->id) }}"
+                                               class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 px-3 rounded-pill">
+                                                <i class="bi bi-eye"></i><span>View</span>
+                                            </a>
+
+                                            {{-- Add a new follow-up --}}
+                                            <a href="{{ route('followups.create', $assignment->id) }}"
+                                               class="btn btn-sm btn-primary d-flex align-items-center gap-1 px-3 rounded-pill">
+                                                <i class="bi bi-plus-circle"></i><span>Add Follow-up</span>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

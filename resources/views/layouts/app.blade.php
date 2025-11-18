@@ -11,23 +11,91 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
+    {{-- Apply saved theme ASAP (prevents flash) --}}
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'dark') document.documentElement.classList.add('dark-mode');
+        } catch (e) {}
+      })();
+    </script>
+
     <style>
+        /* --- Base (light) look stays as-is --- */
         body { background-color: #f8f9fa; }
         .navbar-brand { font-weight: 700; letter-spacing: .3px; }
         .nav-link.active { font-weight: 600; color: #ffc107 !important; }
         .dropdown-menu a { color: #000000 !important; }
 
-        /* Tighter/more consistent link spacing, nicer alignment */
         .navbar-nav .nav-link { padding: .5rem .75rem; }
         .navbar-nav.gapped > .nav-item { margin-left: .25rem; margin-right: .25rem; }
         .navbar-dark .dropdown-menu { min-width: 16rem; }
 
-        /* Optional thin divider between groups on lg+ */
         @media (min-width: 992px) {
             .nav-sep {
                 width: 1px; height: 24px; background: hsla(238, 43%, 25%, 0.251);
                 margin: 0 .5rem;
             }
+        }
+
+        /* =========================
+           DARK MODE THEME
+           ========================= */
+        .dark-mode,
+        .dark-mode body {
+            background-color: #121212 !important;
+            color: #e0e0e0 !important;
+        }
+
+        .dark-mode .navbar {
+            background-color: #0f0f11 !important;
+        }
+
+        .dark-mode .dropdown-menu {
+            background-color: #1c1c1f !important;
+            border-color: #2b2b2f !important;
+        }
+        .dark-mode .dropdown-item { color: #ddd !important; }
+        .dark-mode .dropdown-item:hover { background-color: #2a2a2e !important; }
+
+        .dark-mode .card,
+        .dark-mode .table,
+        .dark-mode .form-control,
+        .dark-mode .form-select,
+        .dark-mode .alert,
+        .dark-mode .modal-content {
+            background-color: #1c1c1f !important;
+            color: #e0e0e0 !important;
+            border-color: #2b2b2f !important;
+        }
+
+        .dark-mode .table thead,
+        .dark-mode .table-dark {
+            background-color: #232327 !important;
+            color: #e0e0e0 !important;
+        }
+
+        .dark-mode .btn-outline-secondary {
+            color: #e0e0e0 !important;
+            border-color: #6c757d !important;
+        }
+        .dark-mode .btn-outline-secondary:hover {
+            background-color: #2b2b2f !important;
+        }
+
+        .dark-mode .btn-link.nav-link { color: #ff6b6b !important; } /* logout link */
+        .dark-mode a { color: #66b3ff; }
+
+        .dark-mode .alert-success {
+            background-color: #0f5132 !important;
+            color: #d1e7dd !important;
+            border-color: #0f5132 !important;
+        }
+        .dark-mode .alert-danger {
+            background-color: #58151c !important;
+            color: #f1aeb5 !important;
+            border-color: #58151c !important;
         }
     </style>
 
@@ -271,8 +339,15 @@
                 @endauth
             </ul>
 
-            {{-- RIGHT: auth actions --}}
+            {{-- RIGHT: auth actions + theme toggle --}}
             <ul class="navbar-nav align-items-lg-center">
+                {{-- Theme Toggle --}}
+                <li class="nav-item me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-sun" id="themeIcon"></i>
+                    </button>
+                </li>
+
                 @auth
                     <li class="nav-item">
                         <form action="{{ route('logout') }}" method="POST" class="d-inline">
@@ -324,6 +399,36 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+{{-- Theme toggle logic --}}
+<script>
+  (function () {
+    const html  = document.documentElement;
+    const btn   = document.getElementById('themeToggle');
+    const icon  = document.getElementById('themeIcon');
+
+    function setIcon() {
+      if (html.classList.contains('dark-mode')) {
+        icon.classList.remove('bi-sun');
+        icon.classList.add('bi-moon-stars');
+      } else {
+        icon.classList.remove('bi-moon-stars');
+        icon.classList.add('bi-sun');
+      }
+    }
+
+    setIcon();
+
+    btn?.addEventListener('click', function () {
+      html.classList.toggle('dark-mode');
+      try {
+        localStorage.setItem('theme', html.classList.contains('dark-mode') ? 'dark' : 'light');
+      } catch (e) {}
+      setIcon();
+    });
+  })();
+</script>
+
 @stack('scripts')
 </body>
 </html>

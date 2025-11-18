@@ -9,7 +9,7 @@
         View all follow-ups you’ve logged so far on assigned members.
     </p>
 
-    {{-- normalize the incoming collection: support $followups OR $histories --}}
+    {{-- normalizing the incoming collection: support $followups OR $histories --}}
     @php
         /** @var \Illuminate\Support\Collection|\Illuminate\Contracts\Pagination\Paginator|null $rows */
         $rows = $followups ?? $histories ?? collect();

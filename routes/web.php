@@ -35,7 +35,7 @@ use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\TemplateController;
 
-// ✅ move service import to the top (prevents “unexpected token use”)
+// keep service import at the top (prevents “unexpected token use”)
 use App\Services\SmsClient;
 
 /*
@@ -158,11 +158,18 @@ Route::middleware(['auth', 'role:Team Member,Staff'])->group(function () {
 */
 Route::middleware(['auth', 'role:Admin,Staff'])->group(function () {
     Route::resource('members', MemberController::class);
+
+    // ⬇️ Export routes (respect current filters via query string)
+    Route::get('members-export/excel', [MemberController::class, 'exportExcel'])
+        ->name('members.export.excel');
+    Route::get('members-export/pdf', [MemberController::class, 'exportPdf'])
+        ->name('members.export.pdf');
 });
 
 /*
 |--------------------------------------------------------------------------
 | HOMECELL REPORTS (Admin + Zonal + Staff)
+| (Add 'Pastor' here too if pastors must access these)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:Admin,Zonal Leader,Staff'])->group(function () {
@@ -174,6 +181,10 @@ Route::middleware(['auth', 'role:Admin,Zonal Leader,Staff'])->group(function () 
 
     Route::post('/reports/homecells', [HomecellReportController::class, 'store'])
         ->name('reports.homecells.store');
+
+    // ✅ NEW: export PDF for filtered Homecell Reports
+    Route::get('/reports/homecells/export/pdf', [HomecellReportController::class, 'exportPdf'])
+        ->name('reports.homecells.export.pdf');
 });
 
 /*
@@ -252,11 +263,11 @@ Route::middleware(['auth', 'role:Admin,Team Leader'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:Admin,Team Leader,Team Member,Staff'])->group(function () {
-    // ✅ Make /followups work for old links expecting name 'followups.my'
+    // Make /followups work for old links expecting name 'followups.my'
     Route::get('/followups', [FollowUpController::class, 'index'])
         ->name('followups.my');
 
-    // (Optional) also expose an /followups/all alias with name 'followups.index'
+    // alias with name 'followups.index'
     Route::get('/followups/all', [FollowUpController::class, 'index'])
         ->name('followups.index');
 
@@ -294,6 +305,9 @@ Route::middleware(['auth', 'role:Admin,Pastor,Team Leader'])->group(function () 
 Route::middleware(['auth', 'role:Admin,Pastor,Staff'])->group(function () {
     Route::resource('services', ServiceController::class);
 
+    Route::get('/attendance/export/pdf', [ServiceAttendanceController::class, 'exportPdf'])
+    ->name('attendance.export.pdf');
+
     // includes edit/update/destroy so the edit page works
     Route::resource('attendance', ServiceAttendanceController::class)
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
@@ -320,7 +334,7 @@ Route::get('/test-sms', function () {
     $sms = new SmsClient();
 
     try {
-        $to = '+260979964985'; // replace with your verified number
+        $to = '+260979964985'; // replaced with my verified number
         $sid = $sms->send($to, 'Hello from ConnectCare via Twilio 🎉');
         return "✅ SMS sent successfully! Message SID: {$sid}";
     } catch (Exception $e) {

@@ -10,15 +10,16 @@
     @endif
 
     {{-- Filters --}}
-    <form method="GET" action="{{ route('reports.homecells.index') }}" class="mb-4">
-        <div class="row align-items-end g-3">
+    <form method="GET" action="{{ route('reports.homecells.index') }}" class="card p-3 mb-3 shadow-sm border-0">
+        <div class="row g-3 align-items-end">
+
             {{-- Church --}}
             <div class="col-md-3">
                 <label for="church_id" class="form-label">Church</label>
                 <select name="church_id" id="church_id" class="form-control" data-old="{{ request('church_id') }}">
                     <option value="">-- All Churches --</option>
                     @foreach($churches as $church)
-                        <option value="{{ $church->id }}" {{ request('church_id') == $church->id ? 'selected' : '' }}>
+                        <option value="{{ $church->id }}" {{ (string)request('church_id')===(string)$church->id ? 'selected' : '' }}>
                             {{ $church->name }}
                         </option>
                     @endforeach
@@ -49,10 +50,31 @@
                 </select>
             </div>
 
-            <div class="col-12 text-end">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ route('reports.homecells.index') }}" class="btn btn-secondary">Reset</a>
-                <a href="{{ route('reports.homecells.create') }}" class="btn btn-success">+ Submit Report</a>
+            {{-- From/To --}}
+            <div class="col-md-2">
+                <label class="form-label">From</label>
+                <input type="date" name="from" value="{{ request('from') }}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To</label>
+                <input type="date" name="to" value="{{ request('to') }}" class="form-control">
+            </div>
+
+            {{-- Search --}}
+            <div class="col-md-4">
+                <label class="form-label">Search (testimonies or submitted by)</label>
+                <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="e.g. healing, John ...">
+            </div>
+
+            {{-- Actions (smaller buttons) --}}
+            <div class="col-md-4 text-end">
+                <a href="{{ route('reports.homecells.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                <button class="btn btn-primary btn-sm">Filter</button>
+                <a href="{{ route('reports.homecells.create') }}" class="btn btn-success btn-sm">+ Submit Report</a>
+                <a href="{{ route('reports.homecells.export.pdf', request()->query()) }}"
+                   class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-filetype-pdf me-1"></i> Export PDF
+                </a>
             </div>
         </div>
     </form>
@@ -143,7 +165,6 @@ $(function () {
     }
   }
 
-  // 🔁 Normalize JSON: accept array OR {data:[...]}
   function ajaxJSON(url, ok) {
     $.ajax({
       url,
@@ -152,15 +173,10 @@ $(function () {
       dataType: 'json'
     })
     .done(resp => {
-      console.log('[Filter]', url, '→', resp);
-      const data = Array.isArray(resp) ? resp
-                : (resp && Array.isArray(resp.data) ? resp.data : []);
+      const data = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.data) ? resp.data : []);
       ok(data);
     })
-    .fail(xhr => {
-      console.error('[Filter] Error', xhr.status, xhr.responseText);
-      ok([]);
-    });
+    .fail(xhr => { console.error('[Filter] Error', xhr.status, xhr.responseText); ok([]); });
   }
 
   // Church → Districts
@@ -205,7 +221,7 @@ $(function () {
     });
   });
 
-  // Kick the chain with previous filter values preserved
+  // Rehydrate chain
   const oldChurch = $church.data('old');
   if (oldChurch) { $church.val(oldChurch); }
   $church.trigger('change');

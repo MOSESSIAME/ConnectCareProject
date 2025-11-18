@@ -7,7 +7,6 @@
         <i class="bi bi-bar-chart-line me-2"></i> Service Attendance Records
     </h2>
 
-    {{-- Success Alert --}}
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -39,7 +38,7 @@
                     <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                 </div>
 
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-funnel me-1"></i> Filter
                     </button>
@@ -48,36 +47,63 @@
         </div>
     </div>
 
-    {{-- Summary --}}
-    <div class="row text-center mb-4">
-        @php
-            $cards = [
-                ['label' => 'Males', 'value' => $summary['total_males'], 'class' => 'text-primary'],
-                ['label' => 'Females', 'value' => $summary['total_females'], 'class' => 'text-success'],
-                ['label' => 'Children', 'value' => $summary['total_children'], 'class' => 'text-warning'],
-                ['label' => 'First Timers', 'value' => $summary['total_first_timers'], 'class' => 'text-info'],
-                ['label' => 'New Converts', 'value' => $summary['total_new_converts'], 'class' => 'text-danger'],
-                ['label' => 'Offering (ZMW)', 'value' => number_format($summary['total_offering'], 2), 'class' => 'text-success'],
-            ];
-        @endphp
+    {{-- Monthly totals (2 cards) --}}
+    <style>
+        .hc-mini-card {
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            background: hsl(228, 9%, 89%);
+            box-shadow: 0 6px 18px rgba(0,0,0,.06);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .hc-mini-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+        .hc-badge {
+            font-size: .75rem;
+            padding: .15rem .5rem;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3b5bdb;
+        }
+    </style>
 
-        @foreach($cards as $card)
-            <div class="col-md-2 mb-2">
-                <div class="card border-0 shadow-sm p-3">
-                    <h6 class="text-muted mb-1">{{ $card['label'] }}</h6>
-                    <h5 class="fw-bold {{ $card['class'] }}">{{ $card['value'] }}</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+            <div class="hc-mini-card p-3 h-100 d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="hc-badge mb-1">{{ $monthLabel }}</div>
+                    <div class="fw-semibold text-muted">First Timers (Month)</div>
+                    <div class="display-6 fw-bold text-info">{{ $monthlyTotals['first_timers'] }}</div>
                 </div>
+                <i class="bi bi-person-plus display-6 text-info"></i>
             </div>
-        @endforeach
+        </div>
+
+        <div class="col-12 col-md-6">
+            <div class="hc-mini-card p-3 h-100 d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="hc-badge mb-1">{{ $monthLabel }}</div>
+                    <div class="fw-semibold text-muted">New Converts (Month)</div>
+                    <div class="display-6 fw-bold text-danger">{{ $monthlyTotals['new_converts'] }}</div>
+                </div>
+                <i class="bi bi-stars display-6 text-danger"></i>
+            </div>
+        </div>
     </div>
 
     {{-- Attendance Table --}}
     <div class="card shadow-sm border-0">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Attendance Records</span>
-            <a href="{{ route('attendance.create') }}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-circle me-1"></i> Record Attendance
-            </a>
+
+            <div class="d-flex gap-2">
+                <a href="{{ route('attendance.export.pdf', request()->query()) }}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-filetype-pdf me-1"></i> Export PDF
+                </a>
+
+                <a href="{{ route('attendance.create') }}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Record Attendance
+                </a>
+            </div>
         </div>
         <div class="card-body">
             @if($records->count())
@@ -95,7 +121,7 @@
                                 <th>New Converts</th>
                                 <th>Offering (ZMW)</th>
                                 <th>Notes</th>
-                                <th class="text-end" style="width: 130px;">Actions</th> {{-- ✅ Aligned Right --}}
+                                <th class="text-end" style="width: 130px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -111,7 +137,7 @@
                                     <td>{{ $record->new_converts }}</td>
                                     <td>{{ number_format($record->offering, 2) }}</td>
                                     <td>{{ $record->notes ?? '–' }}</td>
-                                    <td class="text-end"> {{-- ✅ Right-aligns buttons --}}
+                                    <td class="text-end">
                                         <a href="{{ route('attendance.edit', $record) }}" class="btn btn-sm btn-warning me-1">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>

@@ -28,7 +28,7 @@ return new class extends Migration {
             $table->integer('new_converts')->default(0);
 
             // Testimonies or notes
-            $table->text('testimonies')->nullable();
+             $table->text('testimonies')->nullable();
             $table->text('notes')->nullable();
 
             // Status tracking

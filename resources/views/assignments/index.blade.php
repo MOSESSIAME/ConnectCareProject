@@ -141,11 +141,14 @@
                         <td>{{ optional($assignment->created_at)->format('d M Y') }}</td>
 
                         <td class="text-nowrap">
-                            <form action="{{ route('assignments.destroy', $assignment->id) }}" method="POST" onsubmit="return confirm('Delete this assignment?')" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-danger">Delete</button>
-                            </form>
+                            <!-- Replaced Delete button with View + Add Follow-up -->
+                            <a href="{{ route('followups.assignment', $assignment->id) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fa fa-eye" aria-hidden="true"></i> View
+                            </a>
+
+                            <a href="{{ route('followups.create', $assignment->id) }}" class="btn btn-primary btn-sm ms-2">
+                                <i class="fa fa-plus-circle" aria-hidden="true"></i> Add Follow-up
+                            </a>
                         </td>
                     </tr>
                 @empty
