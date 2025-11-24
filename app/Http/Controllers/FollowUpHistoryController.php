@@ -1,21 +1,11 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use App\Models\FollowUpHistory;
-use App\Models\Assignment;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-class FollowUpHistoryController extends Controller
-{
+<!--  -->
     /**
      * Display follow-up history for a specific assignment.
      */
-    public function index($assignmentId)
+    <!-- public function index($assignmentId) -->
     {
         // ✅ Use find() instead of findOrFail() to handle missing assignments gracefully
-        $assignment = Assignment::with(['member', 'assignedTo', 'assignedBy'])->find($assignmentId);
+        <!-- $assignment = Assignment::with(['member', 'assignedTo', 'assignedBy'])->find($assignmentId);
 
         if (!$assignment) {
             return redirect()
@@ -28,12 +18,12 @@ class FollowUpHistoryController extends Controller
             ->get();
 
         return view('followups.index', compact('assignment', 'histories'));
-    }
+    } -->
 
     /**
      * Show form to log a new follow-up.
      */
-    public function create($assignmentId)
+    <!-- public function create($assignmentId)
     {
         $assignment = Assignment::with('member')->find($assignmentId);
 
@@ -44,12 +34,12 @@ class FollowUpHistoryController extends Controller
         }
 
         return view('followups.create', compact('assignment'));
-    }
+    } -->
 
     /**
      * Store a new follow-up entry.
      */
-    public function store(Request $request, $assignmentId)
+    <!-- public function store(Request $request, $assignmentId)
     {
         $assignment = Assignment::find($assignmentId);
 
@@ -83,12 +73,12 @@ class FollowUpHistoryController extends Controller
         return redirect()
             ->route('followups.index', $assignmentId)
             ->with('success', 'Follow-up entry logged successfully!');
-    }
+    } -->
 
     /**
      * Mark a follow-up as completed.
      */
-    public function complete($id)
+    <!-- public function complete($id)
     {
         $followUp = FollowUpHistory::find($id);
 
@@ -109,24 +99,34 @@ class FollowUpHistoryController extends Controller
                 $assignment->update(['status' => 'Completed']);
             }
         }
+<?php
 
-        return back()->with('success', 'Follow-up marked as completed.');
-    }
+// namespace App\Http\Controllers;
+
+// use App\Models\FollowUpHistory;
+// use App\Models\Assignment;
+// use Illuminate\Http\Request;
+// use Illuminate\Support\Facades\Auth;
+
+// class FollowUpHistoryController extends Controller
+// {
+//         return back()->with('success', 'Follow-up marked as completed.');
+//     }
 
     /**
      * ✅ Show all follow-ups logged by the currently authenticated Team Member.
      */
-    public function myFollowUps()
-    {
-        $userId = Auth::id();
+//     public function myFollowUps()
+//     {
+//         $userId = Auth::id();
 
-        $followups = FollowUpHistory::whereHas('assignment', function ($query) use ($userId) {
-                $query->where('assigned_to', $userId);
-            })
-            ->with(['assignment.member'])
-            ->latest()
-            ->paginate(10);
+//         $followups = FollowUpHistory::whereHas('assignment', function ($query) use ($userId) {
+//                 $query->where('assigned_to', $userId);
+//             })
+//             ->with(['assignment.member'])
+//             ->latest()
+//             ->paginate(10);
 
-        return view('followups.my', compact('followups'));
-    }
-}
+//         return view('followups.my', compact('followups'));
+//     }
+// }

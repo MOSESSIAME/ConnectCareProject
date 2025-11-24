@@ -35,6 +35,7 @@
                                 <th style="width: 180px;">Outcome</th>
                                 <th style="width: 160px;">Status</th>
                                 <th style="width: 160px;">Date Logged</th>
+                                <th style="width:140px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,6 +83,22 @@
                                     </td>
 
                                     <td>{{ $followup->created_at->format('d M Y') }}</td>
+
+                                    <td class="text-nowrap">
+                                        {{-- Edit --}}
+                                        <a href="{{ route('followups.edit', $followup->id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+
+                                        {{-- Delete (confirm) --}}
+                                        <form action="{{ route('followups.destroy', $followup->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Delete this follow-up?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

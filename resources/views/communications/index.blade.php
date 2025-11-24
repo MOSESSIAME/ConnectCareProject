@@ -1,3 +1,5 @@
+{{-- uploaded file: /mnt/data/35621db3-4dc0-4a15-92ff-769f15b25854.png --}}
+
 @extends('layouts.app')
 
 @section('content')
@@ -14,6 +16,74 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+
+    {{-- Filters --}}
+    <form method="GET" action="{{ route('communications.index') }}" class="card mb-3 shadow-sm border-0">
+        <div class="card-body">
+            <div class="row g-2">
+                {{-- Audience --}}
+                <div class="col-12 col-md-3">
+                    <label class="form-label mb-1">Audience</label>
+                    @if(isset($audiences) && count($audiences))
+                        <select name="audience" class="form-select">
+                            <option value="">All</option>
+                            @foreach($audiences as $a)
+                                <option value="{{ $a }}" @selected(request('audience') === (string)$a)>{{ str_replace('_',' ', ucfirst($a)) }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        {{-- fallback audiences if controller didn't supply --}}
+                        <select name="audience" class="form-select">
+                            <option value="">All</option>
+                            <option value="all" @selected(request('audience')==='all')>All</option>
+                            <option value="members" @selected(request('audience')==='members')>Members</option>
+                            <option value="teams" @selected(request('audience')==='teams')>Teams</option>
+                            <option value="admins" @selected(request('audience')==='admins')>Admins</option>
+                        </select>
+                    @endif
+                </div>
+
+                {{-- Date range (Scheduled) --}}
+                <div class="col-6 col-md-3">
+                    <label class="form-label mb-1">Scheduled from</label>
+                    <input type="date" name="from" value="{{ request('from') }}" class="form-control">
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label mb-1">to</label>
+                    <input type="date" name="to" value="{{ request('to') }}" class="form-control">
+                </div>
+
+                {{-- Created by --}}
+                <div class="col-12 col-md-3">
+                    <label class="form-label mb-1">Created by</label>
+                    @if(isset($creators) && count($creators))
+                        <select name="creator_id" class="form-select">
+                            <option value="">Any</option>
+                            @foreach($creators as $u)
+                                <option value="{{ $u->id }}" @selected((string)request('creator_id') === (string)$u->id)>{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    @elseif(isset($users) && count($users))
+                        <select name="creator_id" class="form-select">
+                            <option value="">Any</option>
+                            @foreach($users as $u)
+                                <option value="{{ $u->id }}" @selected((string)request('creator_id') === (string)$u->id)>{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <select name="creator_id" class="form-select">
+                            <option value="">Any</option>
+                        </select>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary">Filter</button>
+                <a href="{{ route('communications.index') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -52,8 +122,10 @@
                         </tbody>
                     </table>
                 </div>
+
                 <div class="p-3">
-                    {{ $records->links() }}
+                    {{-- preserve query string on pagination --}}
+                    {{ $records->appends(request()->query())->links() }}
                 </div>
             @else
                 <div class="p-4 text-center text-muted">No messages yet.</div>

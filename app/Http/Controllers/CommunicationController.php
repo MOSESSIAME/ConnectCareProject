@@ -6,6 +6,7 @@ use App\Jobs\SendCommunicationJob;
 use App\Models\Communication;
 use App\Models\Template;
 use App\Models\Member;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,16 +17,67 @@ use Illuminate\Validation\Rule;
 class CommunicationController extends Controller
 {
     /**
-     * List all communications.
+     * List all communications with filters:
+     *  - audience (all, members, first_timers, new_converts, single)
+     *  - scheduled date range (from / to)
+     *  - created_by (creator_id)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $records = Communication::with('creator')
-            ->latest()
-            ->paginate(15);
+        // Base query
+        $query = Communication::with('creator')->latest();
 
-        // <-- renders resources/views/communications/index.blade.php
-        return view('communications.index', compact('records'));
+        // Filters from query string
+        $audience = $request->query('audience');
+        $from = $request->query('from'); // expected YYYY-MM-DD
+        $to = $request->query('to');     // expected YYYY-MM-DD
+        $creatorId = $request->query('creator_id');
+
+        // whitelist audience values (same as store rule)
+        $allowedAudiences = ['all','members','first_timers','new_converts','single'];
+        if ($audience && in_array($audience, $allowedAudiences, true)) {
+            $query->where('audience', $audience);
+        }
+
+        // scheduled_at date range filter
+        if ($from) {
+            // try parse, fallback to raw whereDate if invalid parse
+            try {
+                $fromDate = Carbon::parse($from)->startOfDay();
+                $query->where('scheduled_at', '>=', $fromDate);
+            } catch (\Exception $e) {
+                $query->whereDate('scheduled_at', '>=', $from);
+            }
+        }
+        if ($to) {
+            try {
+                $toDate = Carbon::parse($to)->endOfDay();
+                $query->where('scheduled_at', '<=', $toDate);
+            } catch (\Exception $e) {
+                $query->whereDate('scheduled_at', '<=', $to);
+            }
+        }
+
+        // created_by filter
+        if ($creatorId && is_numeric($creatorId)) {
+            $query->where('created_by', (int)$creatorId);
+        }
+
+        // pagination (preserve query string in view)
+        $records = $query->paginate(15)->withQueryString();
+
+        // helper lists for filters in the view
+        // audiences: distinct values currently stored (falls back to whitelist)
+        $audiences = Communication::select('audience')->distinct()->pluck('audience')->filter()->values();
+        if ($audiences->isEmpty()) {
+            $audiences = collect($allowedAudiences);
+        }
+
+        // creators: users who created communications (limit to 200 to keep list small)
+        $creatorIds = Communication::select('created_by')->distinct()->pluck('created_by')->filter()->values();
+        $creators = User::whereIn('id', $creatorIds)->orderBy('name')->get();
+
+        return view('communications.index', compact('records', 'audiences', 'creators'));
     }
 
     /**

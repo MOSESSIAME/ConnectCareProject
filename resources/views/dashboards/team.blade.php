@@ -17,12 +17,12 @@
 
 <div class="container py-3">
 
-    <h2 class="fw-bold mb-3">Team Leader Dashboard</h2>
+    <h2 class="fw-bold mb-3">Welcome, {{ Auth::user()->name }}</h2>
 
     {{-- No team notice --}}
     @if(empty($team?->id))
         <div class="alert alert-warning">
-            Your account isn’t attached to a team yet. Ask Admin to assign a <code>team_id</code>.
+            {{-- Your account isn’t attached to a team yet. Ask Admin to assign a <code>team_id</code>. --}}
         </div>
     @endif
 

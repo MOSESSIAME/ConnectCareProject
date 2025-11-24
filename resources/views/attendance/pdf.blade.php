@@ -63,17 +63,5 @@
         </tbody>
     </table>
 
-    {{-- <table class="summary">
-        <tr>
-            <td><strong>Total Males:</strong> {{ (int)$totals->males }}</td>
-            <td><strong>Total Females:</strong> {{ (int)$totals->females }}</td>
-            <td><strong>Total Children:</strong> {{ (int)$totals->children }}</td>
-        </tr>
-        <tr>
-            <td><strong>Total First Timers:</strong> {{ (int)$totals->first_timers }}</td>
-            <td><strong>Total New Converts:</strong> {{ (int)$totals->new_converts }}</td>
-            <td><strong>Total Offering (ZMW):</strong> {{ number_format((float)$totals->offering, 2) }}</td>
-        </tr>
-    </table> --}}
 </body>
 </html>

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4 fw-bold">Homecell Reports Dashboard</h2>
+    <h2 class="mb-4 fw-bold">Homecell Reports Summary</h2>
 
     {{-- =======================
         TOTALS SUMMARY SECTION

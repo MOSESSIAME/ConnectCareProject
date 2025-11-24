@@ -42,6 +42,10 @@
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-funnel me-1"></i> Filter
                     </button>
+
+                    <a href="{{ route('attendance.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </a>
                 </div>
             </form>
         </div>
@@ -129,7 +133,7 @@
                                 <tr>
                                     <td>{{ $records->firstItem() + $i }}</td>
                                     <td>{{ $record->service->name ?? 'N/A' }}</td>
-                                    <td>{{ optional($record->service)->service_date ? \Carbon\Carbon::parse($record->service->service_date)->format('d M Y') : 'N/A' }}</td>
+                                    <td>{{ optional($record->created_at)->format('d M Y') }}</td>
                                     <td>{{ $record->males }}</td>
                                     <td>{{ $record->females }}</td>
                                     <td>{{ $record->children }}</td>

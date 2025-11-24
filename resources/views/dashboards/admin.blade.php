@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4 fw-bold">Homecell Reports Dashboard</h2>
+
+     <h2 class="fw-bold text-primary mb-1">Welcome, {{ Auth::user()->name }}</h2>
+    <h4 class="mb-4 fw-bold">Homecell Reports Summary</h4>
 
     {{-- =======================
         TOTALS SUMMARY SECTION

@@ -24,10 +24,13 @@
                 <option value="">-- Select Service --</option>
                 @foreach($services as $s)
                     <option value="{{ $s->id }}" {{ old('service_id') == $s->id ? 'selected' : '' }}>
-                        {{ $s->name }} — {{ optional($s->service_date)->format('d M Y') }}
+                        {{ $s->name }}
                     </option>
                 @endforeach
             </select>
+            <div class="form-text">
+                Select the service name (the attendance date will be the time you record this attendance).
+            </div>
         </div>
 
         <div class="row g-3">

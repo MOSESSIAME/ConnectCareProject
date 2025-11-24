@@ -7,6 +7,7 @@ use App\Models\ServiceAttendance;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf; // <- requires barryvdh/laravel-dompdf
 
 class ServiceAttendanceController extends Controller
 {
@@ -36,7 +37,7 @@ class ServiceAttendanceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // Totals over filtered dataset (for the big numbers row, if you still use it elsewhere)
+        // Totals over filtered dataset (for the big numbers row)
         $totals = (clone $base)
             ->reorder()
             ->selectRaw('
@@ -58,9 +59,7 @@ class ServiceAttendanceController extends Controller
             'total_offering'     => (float) $totals->offering,
         ];
 
-        // ================
         // Monthly totals (reset every month)
-        // ================
         $monthStart = now()->startOfMonth();
         $monthEnd   = now()->endOfMonth();
         $monthLabel = now()->format('M Y');
@@ -95,32 +94,35 @@ class ServiceAttendanceController extends Controller
      */
     public function create()
     {
-        $services = Service::orderByDesc('service_date')
-            ->orderBy('name')
-            ->get(['id', 'name', 'service_date']);
+        // Keep services as fixed names (no date appended here)
+        $services = Service::orderBy('name')
+            ->get(['id', 'name', 'service_date']); // service_date left for reference but not shown in select
 
         return view('attendance.create', compact('services'));
     }
 
     /**
-     * Persist new attendance (idempotent per service).
+     * Persist new attendance (allow multiple entries per service).
+     *
+     * NOTE: We changed behaviour:
+     * - previously updateOrCreate(['service_id' => ...]) enforced a single attendance per service
+     * - now we create a new attendance row each time (created_at becomes the attendance date)
      */
     public function store(Request $request)
     {
         $data = $this->validatePayload($request);
 
-        ServiceAttendance::updateOrCreate(
-            ['service_id' => $data['service_id']],
-            [
-                'males'         => $data['males'],
-                'females'       => $data['females'],
-                'children'      => $data['children'] ?? 0,
-                'first_timers'  => $data['first_timers'] ?? 0,
-                'new_converts'  => $data['new_converts'] ?? 0,
-                'offering'      => $data['offering'] ?? 0,
-                'notes'         => $data['notes'] ?? null,
-            ]
-        );
+        // Create new attendance record (do NOT enforce uniqueness on service_id)
+        ServiceAttendance::create([
+            'service_id'    => $data['service_id'],
+            'males'         => $data['males'],
+            'females'       => $data['females'],
+            'children'      => $data['children'] ?? 0,
+            'first_timers'  => $data['first_timers'] ?? 0,
+            'new_converts'  => $data['new_converts'] ?? 0,
+            'offering'      => $data['offering'] ?? 0,
+            'notes'         => $data['notes'] ?? null,
+        ]);
 
         return redirect()->route('attendance.index')
             ->with('success', 'Attendance saved successfully.');
@@ -142,18 +144,8 @@ class ServiceAttendanceController extends Controller
     {
         $data = $this->validatePayload($request, $attendance);
 
-        if (isset($data['service_id'])) {
-            $exists = ServiceAttendance::where('service_id', $data['service_id'])
-                ->where('id', '!=', $attendance->id)
-                ->exists();
-
-            if ($exists) {
-                return back()
-                    ->withErrors(['service_id' => 'Attendance for this service already exists.'])
-                    ->withInput();
-            }
-        }
-
+        // We no longer enforce uniqueness across service_id globally; if you still want to prevent
+        // duplicates on the same created date you can implement that logic here.
         $attendance->update([
             'service_id'    => $data['service_id'],
             'males'         => $data['males'],
@@ -179,11 +171,11 @@ class ServiceAttendanceController extends Controller
 
     private function validatePayload(Request $request, ?ServiceAttendance $attendance = null): array
     {
+        // Removed the unique rule on service_id so you can reuse service names
         return $request->validate([
             'service_id'    => [
                 'required',
                 'exists:services,id',
-                Rule::unique('service_attendances', 'service_id')->ignore(optional($attendance)->id),
             ],
             'males'         => ['required', 'integer', 'min:0'],
             'females'       => ['required', 'integer', 'min:0'],
@@ -193,5 +185,45 @@ class ServiceAttendanceController extends Controller
             'offering'      => ['nullable', 'numeric', 'min:0'],
             'notes'         => ['nullable', 'string', 'max:1000'],
         ]);
+    }
+
+    /**
+     * Export filtered attendance to PDF.
+     * Route: GET /attendance/export/pdf
+     */
+    public function exportPdf(Request $request)
+    {
+        // Build the same query used in index (but return all rows matching filters)
+        $query = ServiceAttendance::with('service');
+
+        if ($request->filled('service_id')) {
+            $query->where('service_id', $request->service_id);
+        }
+
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($request->from_date)->startOfDay(),
+                Carbon::parse($request->to_date)->endOfDay(),
+            ]);
+        }
+
+        $rows = $query->latest()->get();
+
+        // Prepare a human-friendly filters array for the pdf header
+        $filters = [
+            'service'   => optional(Service::find($request->service_id))->name,
+            'from_date' => $request->from_date,
+            'to_date'   => $request->to_date,
+        ];
+
+        // If you have barryvdh/laravel-dompdf installed, return a PDF; otherwise return the HTML view
+        try {
+            $pdf = Pdf::loadView('attendance.pdf', compact('rows', 'filters'));
+            $filename = 'attendance_' . now()->format('Ymd_His') . '.pdf';
+            return $pdf->download($filename);
+        } catch (\Throwable $e) {
+            // Fallback: return HTML view so you can see output in browser (useful for debugging)
+            return view('attendance.pdf', compact('rows', 'filters'));
+        }
     }
 }

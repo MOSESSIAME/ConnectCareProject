@@ -255,6 +255,13 @@ Route::middleware(['auth', 'role:Admin,Team Leader'])->group(function () {
 
     Route::post('/assignments/reassign', [AssignmentController::class, 'reassign'])
         ->name('assignments.reassign.post');
+
+    // NEW: edit / update routes (Admin + Team Leader)
+    Route::get('/assignments/{assignment}/edit', [AssignmentController::class, 'edit'])
+        ->whereNumber('assignment')->name('assignments.edit');
+
+    Route::put('/assignments/{assignment}', [AssignmentController::class, 'update'])
+        ->whereNumber('assignment')->name('assignments.update');
 });
 
 /*
@@ -285,6 +292,16 @@ Route::middleware(['auth', 'role:Admin,Team Leader,Team Member,Staff'])->group(f
     // Mark a follow-up as completed
     Route::post('/followups/complete/{id}', [FollowUpController::class, 'complete'])
         ->whereNumber('id')->name('followups.complete');
+
+    // NEW: Edit / Update / Destroy followups (Admin / Team Leader / assignee)
+    Route::get('/followups/{followup}/edit', [FollowUpController::class, 'edit'])
+        ->whereNumber('followup')->name('followups.edit');
+
+    Route::put('/followups/{followup}', [FollowUpController::class, 'update'])
+        ->whereNumber('followup')->name('followups.update');
+
+    Route::delete('/followups/{followup}', [FollowUpController::class, 'destroy'])
+        ->whereNumber('followup')->name('followups.destroy');
 });
 
 /*

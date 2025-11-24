@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\Member;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\FollowUpHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,17 +41,29 @@ class AssignmentController extends Controller
             $query->where('assigned_to', $user->id);
         }
 
-        // Filters
-        if ($status = request('status')) {
+        // Filters (from request)
+        $status     = request('status');
+        $filterTeam = request('team_id');
+        $assignedTo = request('assigned_to');
+        $q          = trim(request('q', ''));
+        $createdBy  = request('created_by');
+        $from       = request('from');
+        $to         = request('to');
+
+        if ($status) {
             $query->where('status', $status);
         }
-        if ($role === 'Admin' && ($teamId = request('team_id'))) {
-            $query->where('team_id', $teamId);
+
+        // team filter only allowed by Admin (keeps your previous behaviour)
+        if ($role === 'Admin' && $filterTeam) {
+            $query->where('team_id', $filterTeam);
         }
-        if ($assignedTo = request('assigned_to')) {
+
+        if ($assignedTo) {
             $query->where('assigned_to', $assignedTo);
         }
-        if ($q = trim(request('q', ''))) {
+
+        if ($q !== '') {
             $query->where(function ($qq) use ($q) {
                 $qq->whereHas('member', function ($m) use ($q) {
                         $m->where('full_name', 'like', "%{$q}%")
@@ -62,9 +75,52 @@ class AssignmentController extends Controller
             });
         }
 
+        // New: filter by who created the assignment
+        if ($createdBy) {
+            $query->where('assigned_by', $createdBy);
+        }
+
+        // New: date range filters
+        if ($from) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('created_at', '<=', $to);
+        }
+
         $assignments = $query->paginate(10)->withQueryString();
 
-        return view('assignments.index', compact('assignments'));
+        //
+        // Provide lists for the filter selects so the view can render options
+        //
+        // Teams: all team rows (admin filter list)
+        $teams = Team::orderBy('name')->get();
+
+        // Assignees: union of users present in team_user pivot OR used in assignments
+        $pivotUserIds = DB::table('team_user')->pluck('user_id')->unique()->filter()->values()->toArray();
+        $assignedIds  = Assignment::whereNotNull('assigned_to')->pluck('assigned_to')->unique()->filter()->values()->toArray();
+        $assigneeIds  = array_values(array_unique(array_merge($pivotUserIds, $assignedIds)));
+
+        $assignees = User::whereIn('id', $assigneeIds)->orderBy('name')->get();
+
+        // Creators: users who have created assignments (assigned_by)
+        $creatorIds = Assignment::whereNotNull('assigned_by')->pluck('assigned_by')->unique()->filter()->values()->toArray();
+        $creators = User::whereIn('id', $creatorIds)->orderBy('name')->get();
+
+        // Pass current filter values to the view as well (optional convenience)
+        return view('assignments.index', [
+            'assignments' => $assignments,
+            'teams'       => $teams,
+            'assignees'   => $assignees,
+            'creators'    => $creators,
+            'q'           => $q,
+            'status'      => $status,
+            'team_id'     => $filterTeam,
+            'assigned_to' => $assignedTo,
+            'created_by'  => $createdBy,
+            'from'        => $from,
+            'to'          => $to,
+        ]);
     }
 
     /**
@@ -230,13 +286,134 @@ class AssignmentController extends Controller
 
     /**
      * Soft-delete an assignment.
+     * Now deletes related follow-ups first to avoid FK constraint errors.
      */
     public function destroy($id)
     {
         $assignment = Assignment::findOrFail($id);
+
+        $user = Auth::user();
+        $role = $user->role->name ?? '';
+
+        // permission: Admin can delete any, Team Leader only in their team
+        if ($role === 'Team Leader') {
+            $teamId = optional($user->leadsTeam)->id;
+            abort_unless($teamId && $assignment->team_id == $teamId, 403, 'You can only delete assignments in your team.');
+        }
+
+        // Delete follow-ups for this assignment (to avoid FK constraint)
+        FollowUpHistory::where('assignment_id', $assignment->id)->delete();
+
+        // Now delete the assignment (soft or hard depending on your model)
         $assignment->delete();
 
         return back()->with('success', 'Assignment deleted successfully.');
+    }
+
+    /**
+     * Show edit form for a single assignment.
+     *
+     * - Admin: can edit any assignment (change team, assigned_to, status)
+     * - Team Leader: only assignments in their team; can change assigned_to within team
+     */
+    public function edit(Assignment $assignment)
+    {
+        $user = Auth::user();
+        $role = $user->role->name ?? '';
+
+        // Authorization: Team Leader can only edit assignments in their team
+        if ($role === 'Team Leader') {
+            $leaderTeamId = optional($user->leadsTeam)->id;
+            abort_unless($leaderTeamId && $assignment->team_id == $leaderTeamId, 403, 'Not your team.');
+        }
+
+        // Load supporting data:
+        // - Admin: all teams + their members
+        // - Leader: only their team members
+        if ($role === 'Admin') {
+            $teams = Team::with('members:id,name')->orderBy('name')->get();
+            $assignees = collect(); // kept for compatibility with views expecting this var
+        } else {
+            // Team Leader: load members only for their team
+            $leaderTeamId = optional($user->leadsTeam)->id;
+            $teams = Team::where('id', $leaderTeamId)->with('members:id,name')->get();
+            $assignees = Team::with('members:id,name')->find($leaderTeamId)?->members ?? collect();
+        }
+
+        // Optionally provide a list of users in the current assignment team for the select
+        $currentTeamMembers = Team::with('members:id,name')->find($assignment->team_id)?->members ?? collect();
+
+        return view('assignments.edit', [
+            'assignment' => $assignment,
+            'teams' => $teams,
+            'assignees' => $assignees,
+            'currentTeamMembers' => $currentTeamMembers,
+        ]);
+    }
+
+    /**
+     * Update an assignment (team change, assigned_to, status)
+     *
+     * - Admin: can change team_id and assigned_to (must check pivot membership)
+     * - Team Leader: can only change assigned_to within their team (status allowed)
+     */
+    public function update(Request $request, Assignment $assignment)
+    {
+        $user = Auth::user();
+        $role = $user->role->name ?? '';
+
+        if ($role === 'Admin') {
+            $request->validate([
+                'team_id'     => 'required|exists:teams,id',
+                'assigned_to' => 'nullable|exists:users,id',
+                'status'      => 'required|in:Active,Reassigned,Completed',
+            ]);
+
+            // If assigned_to present, check that user belongs to chosen team (via pivot)
+            if ($request->filled('assigned_to')) {
+                $inTeam = DB::table('team_user')
+                    ->where('team_id', $request->team_id)
+                    ->where('user_id', $request->assigned_to)
+                    ->exists();
+                abort_unless($inTeam, 422, 'Selected user is not in the chosen team.');
+            }
+
+            $assignment->update([
+                'team_id'     => $request->team_id,
+                'assigned_to' => $request->assigned_to,
+                'status'      => $request->status,
+            ]);
+
+            return redirect()->route('assignments.index')->with('success', 'Assignment updated successfully.');
+        }
+
+        // Team Leader: can only update assigned_to (must be a member of their team)
+        if ($role === 'Team Leader') {
+            $leaderTeamId = optional($user->leadsTeam)->id;
+            abort_unless($leaderTeamId && $assignment->team_id == $leaderTeamId, 403, 'Not your team.');
+
+            $request->validate([
+                'assigned_to' => 'required|exists:users,id',
+                'status'      => 'required|in:Active,Reassigned,Completed',
+            ]);
+
+            // Check membership via pivot
+            $inTeam = DB::table('team_user')
+                ->where('team_id', $leaderTeamId)
+                ->where('user_id', $request->assigned_to)
+                ->exists();
+            abort_unless($inTeam, 422, 'Selected user is not in your team.');
+
+            $assignment->update([
+                'assigned_to' => $request->assigned_to,
+                'status'      => $request->status,
+            ]);
+
+            return redirect()->route('assignments.index')->with('success', 'Assignment updated within your team.');
+        }
+
+        // Other roles shouldn't be able to hit this route
+        abort(403);
     }
 
     /**

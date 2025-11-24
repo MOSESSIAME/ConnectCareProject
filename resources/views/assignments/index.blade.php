@@ -91,7 +91,7 @@
                     <th>Assigned By</th>
                     <th style="width: 190px;">Status</th>
                     <th>Created</th>
-                    <th style="width: 140px;">Actions</th>
+                    <th style="width: 160px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -140,15 +140,35 @@
 
                         <td>{{ optional($assignment->created_at)->format('d M Y') }}</td>
 
-                        <td class="text-nowrap">
-                            <!-- Replaced Delete button with View + Add Follow-up -->
-                            <a href="{{ route('followups.assignment', $assignment->id) }}" class="btn btn-outline-primary btn-sm">
-                                <i class="fa fa-eye" aria-hidden="true"></i> View
-                            </a>
+                        <td class="text-nowrap align-top">
+                            <div class="d-flex flex-column align-items-start">
+                                <div class="mb-2">
+                                    <a href="{{ route('followups.assignment', $assignment->id) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fa fa-eye" aria-hidden="true"></i> View
+                                    </a>
 
-                            <a href="{{ route('followups.create', $assignment->id) }}" class="btn btn-primary btn-sm ms-2">
-                                <i class="fa fa-plus-circle" aria-hidden="true"></i> Add Follow-up
-                            </a>
+                                    <a href="{{ route('followups.create', $assignment->id) }}" class="btn btn-primary btn-sm ms-2">
+                                        <i class="fa fa-plus-circle" aria-hidden="true"></i> Add Follow-up
+                                    </a>
+                                </div>
+
+                                {{-- Edit / Delete (only show to Admin or the user who created the assignment) --}}
+                                {{-- @if($role === 'Admin' || auth()->id() === optional($assignment->assignedBy)->id)
+                                    <div>
+                                        <a href="{{ route('assignments.edit', $assignment->id) }}" class="btn btn-sm btn-outline-warning">
+                                            <i class="fa fa-edit" aria-hidden="true"></i> Edit
+                                        </a>
+
+                                        <form action="{{ route('assignments.destroy', $assignment->id) }}" method="POST" class="d-inline ms-2" onsubmit="return confirm('Delete this assignment? This cannot be undone.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fa fa-trash" aria-hidden="true"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif --}}
+                            </div>
                         </td>
                     </tr>
                 @empty
