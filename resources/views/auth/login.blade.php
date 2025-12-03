@@ -44,11 +44,11 @@ body > p.text-muted {
                 @csrf
                 
                 <div class="mb-3">
-                    <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <label for="email" class="form-label fw-semibold">Username</label>
                     <input id="email" type="email" 
                            class="form-control form-control-lg @error('email') is-invalid @enderror"
                            name="email" value="{{ old('email') }}" required autofocus
-                           placeholder="Enter your email" autocomplete="username">
+                           placeholder="Enter your Username" autocomplete="username">
                 </div>
 
                 <div class="mb-3">

@@ -8,7 +8,7 @@ use App\Models\Homecell;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
-// ⬇️ Export libs
+// Export libs
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\MembersExport;
@@ -21,13 +21,14 @@ class MemberController extends Controller
     private function filteredMembersQuery(Request $request)
     {
         $q          = trim((string) $request->get('q', ''));           // search
-        $type       = $request->get('type');                            // First-timer | New Convert | Existing Member
-        $serviceId  = $request->get('service_unit_id');                 // FK
-        $homecellId = $request->get('homecell_id');                     // FK
-        $foundation = $request->get('foundation');                      // completed | pending | null
-        $from       = $request->get('from');                            // Y-m-d
-        $to         = $request->get('to');                              // Y-m-d
-        $sort       = $request->get('sort', 'created_at');              // full_name|email|created_at
+        $type       = $request->get('type');                          // First-timer | New Convert | Existing Member
+        $gender     = $request->get('gender');                        // M | F
+        $serviceId  = $request->get('service_unit_id');               // FK
+        $homecellId = $request->get('homecell_id');                   // FK
+        $foundation = $request->get('foundation');                    // completed | pending | null
+        $from       = $request->get('from');                          // Y-m-d
+        $to         = $request->get('to');                            // Y-m-d
+        $sort       = $request->get('sort', 'created_at');            // full_name|email|created_at
         $dir        = strtolower($request->get('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         $sortable = ['full_name', 'email', 'created_at'];
@@ -41,10 +42,12 @@ class MemberController extends Controller
                     $x->where('full_name', 'like', "%{$q}%")
                       ->orWhere('phone', 'like', "%{$q}%")
                       ->orWhere('email', 'like', "%{$q}%")
-                      ->orWhere('address', 'like', "%{$q}%"); // ⬅️ address included in search
+                      ->orWhere('address', 'like', "%{$q}%");
                 });
             })
             ->when($type, fn ($query) => $query->where('type', $type))
+            // NEW: gender filter
+            ->when($gender, fn ($query) => $query->where('gender', $gender))
             ->when($serviceId, fn ($query) => $query->where('service_unit_id', $serviceId))
             ->when($homecellId, fn ($query) => $query->where('homecell_id', $homecellId))
             ->when($foundation === 'completed', fn ($q) => $q->where('foundation_class_completed', true))
@@ -84,6 +87,7 @@ class MemberController extends Controller
 
             'q'          => $request->get('q',''),
             'type'       => $request->get('type'),
+            'gender'     => $request->get('gender'),           // <-- pass gender back
             'serviceId'  => $request->get('service_unit_id'),
             'homecellId' => $request->get('homecell_id'),
             'foundation' => $request->get('foundation'),
@@ -139,10 +143,12 @@ class MemberController extends Controller
     {
         $request->validate([
             'full_name'                  => 'required|string|max:100',
+            // gender optional at creation; enforce allowed values
+            'gender'                     => 'nullable|in:M,F',
             'phone'                      => 'nullable|string|max:20',
             'email'                      => 'nullable|email|max:100|unique:members,email',
             'type'                       => 'required|in:First-timer,New Convert,Existing Member',
-            'address'                    => 'nullable|string|max:255', // ⬅️ address
+            'address'                    => 'nullable|string|max:255',
             'from_other_church'          => 'boolean',
             'note'                       => 'nullable|string',
             'foundation_class_completed' => 'boolean',
@@ -174,10 +180,11 @@ class MemberController extends Controller
     {
         $request->validate([
             'full_name'                  => 'required|string|max:100',
+            'gender'                     => 'required|in:M,F',
             'phone'                      => 'nullable|string|max:20',
             'email'                      => 'nullable|email|max:100|unique:members,email,' . $member->id,
             'type'                       => 'required|in:First-timer,New Convert,Existing Member',
-            'address'                    => 'nullable|string|max:255', // ⬅️ address
+            'address'                    => 'required|string|max:255',
             'from_other_church'          => 'boolean',
             'note'                       => 'nullable|string',
             'foundation_class_completed' => 'boolean',

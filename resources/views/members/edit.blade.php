@@ -30,6 +30,15 @@
                        value="{{ old('full_name', $member->full_name) }}" required>
             </div>
 
+            {{-- Gender --}}
+            <div class="col-md-4">
+                <label for="gender" class="form-label">Gender</label>
+                <select name="gender" id="gender" class="form-select" required>
+                    <option value="M" @selected(old('gender', (string) $member->gender ?? 'M') === 'M')>Male (M)</option>
+                    <option value="F" @selected(old('gender', (string) $member->gender ?? 'M') === 'F')>Female (F)</option>
+                </select>
+            </div>
+
             {{-- Phone --}}
             <div class="col-md-3">
                 <label for="phone" class="form-label">Phone</label>
@@ -55,7 +64,7 @@
             {{-- Member Type --}}
             <div class="col-md-4">
                 <label for="type" class="form-label">Member Type</label>
-                <select name="type" id="type" class="form-control" required>
+                <select name="type" id="type" class="form-select" required>
                     <option value="First-timer"     @selected(old('type', $member->type) === 'First-timer')>First-timer</option>
                     <option value="New Convert"     @selected(old('type', $member->type) === 'New Convert')>New Convert</option>
                     <option value="Existing Member" @selected(old('type', $member->type) === 'Existing Member')>Existing Member</option>
@@ -65,18 +74,18 @@
             {{-- From another church --}}
             <div class="col-md-4">
                 <label for="from_other_church" class="form-label">From Another Church?</label>
-                <select name="from_other_church" id="from_other_church" class="form-control">
-                    <option value="0" @selected(old('from_other_church', (int)$member->from_other_church) == 0)>No</option>
-                    <option value="1" @selected(old('from_other_church', (int)$member->from_other_church) == 1)>Yes</option>
+                <select name="from_other_church" id="from_other_church" class="form-select">
+                    <option value="0" @selected(old('from_other_church', (int) $member->from_other_church) == 0)>No</option>
+                    <option value="1" @selected(old('from_other_church', (int) $member->from_other_church) == 1)>Yes</option>
                 </select>
             </div>
 
             {{-- Foundation class (NEW) --}}
             <div class="col-md-4">
                 <label for="foundation_class_completed" class="form-label">Foundation Class</label>
-                <select name="foundation_class_completed" id="foundation_class_completed" class="form-control">
-                    <option value="0" @selected(old('foundation_class_completed', (int)$member->foundation_class_completed) == 0)>Pending</option>
-                    <option value="1" @selected(old('foundation_class_completed', (int)$member->foundation_class_completed) == 1)>Completed</option>
+                <select name="foundation_class_completed" id="foundation_class_completed" class="form-select">
+                    <option value="0" @selected(old('foundation_class_completed', (int) $member->foundation_class_completed) == 0)>Pending</option>
+                    <option value="1" @selected(old('foundation_class_completed', (int) $member->foundation_class_completed) == 1)>Completed</option>
                 </select>
             </div>
 

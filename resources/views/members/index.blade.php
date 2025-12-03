@@ -12,6 +12,7 @@
     {{-- Filters --}}
     <form method="GET" action="{{ route('members.index') }}" class="card p-3 mb-3 shadow-sm border-0">
         <div class="row g-3 align-items-end">
+
             {{-- Search --}}
             <div class="col-md-3">
                 <label class="form-label">Search (name / phone / email / address)</label>
@@ -26,6 +27,16 @@
                     @foreach($types as $t)
                         <option value="{{ $t }}" {{ ($type ?? '') === $t ? 'selected' : '' }}>{{ $t }}</option>
                     @endforeach
+                </select>
+            </div>
+
+            {{-- Gender --}}
+            <div class="col-md-2">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-select">
+                    <option value="">-- All --</option>
+                    <option value="M" {{ ($gender ?? '') === 'M' ? 'selected' : '' }}>Male (M)</option>
+                    <option value="F" {{ ($gender ?? '') === 'F' ? 'selected' : '' }}>Female (F)</option>
                 </select>
             </div>
 
@@ -61,7 +72,7 @@
                 <select name="foundation" class="form-select">
                     <option value="">-- All --</option>
                     <option value="completed" {{ ($foundation ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="pending"   {{ ($foundation ?? '') === 'pending'   ? 'selected' : '' }}>Pending</option>
+                    <option value="pending" {{ ($foundation ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                 </select>
             </div>
 
@@ -84,6 +95,8 @@
                     <option value="email"      {{ ($sort ?? '') === 'email'      ? 'selected' : '' }}>Email</option>
                 </select>
             </div>
+
+            {{-- Direction --}}
             <div class="col-md-1">
                 <label class="form-label">Dir</label>
                 <select name="dir" class="form-select">
@@ -92,21 +105,18 @@
                 </select>
             </div>
 
-            {{-- Actions (smaller buttons) --}}
-            <div class="col-md-5 text-end">
+            {{-- BUTTONS (pushed to far right) --}}
+            <div class="col-12 d-flex justify-content-end gap-2 mt-2">
                 <a href="{{ route('members.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
                 <button class="btn btn-primary btn-sm">Filter</button>
                 <a href="{{ route('members.create') }}" class="btn btn-success btn-sm">+ Add Member</a>
             </div>
+
         </div>
     </form>
 
-    {{-- Export toolbar (respects filters via query string) --}}
+    {{-- Export toolbar --}}
     <div class="d-flex justify-content-end gap-2 mb-3">
-        {{-- Excel (keep commented if not ready) --}}
-        {{-- <a class="btn btn-outline-secondary btn-sm" href="{{ route('members.export.excel', request()->query()) }}">
-            <i class="bi bi-file-earmark-excel"></i> Export Excel
-        </a> --}}
         <a class="btn btn-outline-danger btn-sm"
            href="{{ route('members.export.pdf', request()->query()) }}">
             <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
@@ -119,6 +129,7 @@
             <thead class="table-light">
                 <tr>
                     <th>Name</th>
+                    <th>Gender</th>
                     <th>Type</th>
                     <th>Phone</th>
                     <th>Email</th>
@@ -133,6 +144,7 @@
                 @forelse($members as $member)
                     <tr>
                         <td>{{ $member->full_name }}</td>
+                        <td>{{ $member->gender }}</td>
                         <td>{{ $member->type }}</td>
                         <td>{{ $member->phone ?: '—' }}</td>
                         <td>{{ $member->email ?: '—' }}</td>
@@ -156,7 +168,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted">No members found.</td>
+                        <td colspan="10" class="text-center text-muted">No members found.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -30,6 +30,15 @@
                        value="{{ old('full_name') }}" required>
             </div>
 
+            {{-- Gender --}}
+            <div class="col-md-4">
+                <label for="gender" class="form-label">Gender</label>
+                <select name="gender" id="gender" class="form-select" required>
+                    <option value="M" @selected(old('gender', 'M') === 'M')>Male (M)</option>
+                    <option value="F" @selected(old('gender') === 'F')>Female (F)</option>
+                </select>
+            </div>
+
             {{-- Phone --}}
             <div class="col-md-3">
                 <label for="phone" class="form-label">Phone</label>
@@ -44,59 +53,64 @@
                        value="{{ old('email') }}">
             </div>
 
-            {{-- Address (NEW) --}}
+            {{-- Address (REQUIRED NOW) --}}
             <div class="col-12">
                 <label for="address" class="form-label">Address</label>
                 <input type="text" name="address" id="address" class="form-control"
-                       placeholder="e.g., Plot 10, Kabulonga, Lusaka" value="{{ old('address') }}">
+                       placeholder="e.g., Plot 10, Kabulonga, Lusaka"
+                       value="{{ old('address') }}" required>
             </div>
 
             {{-- Member Type --}}
             <div class="col-md-4">
                 <label for="type" class="form-label">Member Type</label>
-                <select name="type" id="type" class="form-control" required>
-                    <option value="First-timer"   @selected(old('type') === 'First-timer')>First-timer</option>
-                    <option value="New Convert"   @selected(old('type') === 'New Convert')>New Convert</option>
-                    <option value="Existing Member" @selected(old('type') === 'Existing Member')>Existing Member</option>
+                <select name="type" id="type" class="form-select" required>
+                    <option value="First-timer"       @selected(old('type') === 'First-timer')>First-timer</option>
+                    <option value="New Convert"       @selected(old('type') === 'New Convert')>New Convert</option>
+                    <option value="Existing Member"   @selected(old('type') === 'Existing Member')>Existing Member</option>
                 </select>
             </div>
 
             {{-- From another church --}}
             <div class="col-md-4">
                 <label for="from_other_church" class="form-label">From Another Church?</label>
-                <select name="from_other_church" id="from_other_church" class="form-control">
+                <select name="from_other_church" id="from_other_church" class="form-select">
                     <option value="0" @selected(old('from_other_church', '0') == '0')>No</option>
                     <option value="1" @selected(old('from_other_church') == '1')>Yes</option>
                 </select>
             </div>
 
-            {{-- Foundation class (NEW) --}}
+            {{-- Foundation class --}}
             <div class="col-md-4">
                 <label for="foundation_class_completed" class="form-label">Foundation Class</label>
-                <select name="foundation_class_completed" id="foundation_class_completed" class="form-control">
+                <select name="foundation_class_completed" id="foundation_class_completed" class="form-select">
                     <option value="0" @selected(old('foundation_class_completed', '0') == '0')>Pending</option>
                     <option value="1" @selected(old('foundation_class_completed') == '1')>Completed</option>
                 </select>
             </div>
 
-            {{-- Service Unit (NEW) --}}
+            {{-- Service Unit --}}
             <div class="col-md-6">
                 <label for="service_unit_id" class="form-label">Service Unit</label>
                 <select name="service_unit_id" id="service_unit_id" class="form-select">
                     <option value="">-- None --</option>
                     @foreach($serviceUnits as $su)
-                        <option value="{{ $su->id }}" @selected(old('service_unit_id') == $su->id)>{{ $su->name }}</option>
+                        <option value="{{ $su->id }}" @selected(old('service_unit_id') == $su->id)>
+                            {{ $su->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
 
-            {{-- Homecell (NEW) --}}
+            {{-- Homecell --}}
             <div class="col-md-6">
                 <label for="homecell_id" class="form-label">Homecell</label>
                 <select name="homecell_id" id="homecell_id" class="form-select">
                     <option value="">-- None --</option>
                     @foreach($homecells as $hc)
-                        <option value="{{ $hc->id }}" @selected(old('homecell_id') == $hc->id)>{{ $hc->name }}</option>
+                        <option value="{{ $hc->id }}" @selected(old('homecell_id') == $hc->id)>
+                            {{ $hc->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
